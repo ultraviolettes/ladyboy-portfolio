@@ -1,4 +1,4 @@
-@import '../../../../vendor/filament/filament/resources/css/base.css';
+@import "tailwindcss";
 
 @tailwind base;
 @tailwind components;
