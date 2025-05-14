@@ -1,13 +1,6 @@
 @import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-@tailwind variants;
 
-@config './tailwind.config.js';
-
-/*
 .fi-topbar nav{
     background:none !important;
     box-shadow:none !important;
@@ -37,7 +30,7 @@
 
 .text-blue-600{
     color:#3662e3;
-} */
+}
 
 .text-blue-600{
     color:#3662e3;
@@ -48,13 +41,13 @@
     @apply border-b border-gray-200/60 dark:border-gray-800;
 }
 
-/* .fi-url-admin-forms .fi-main{
+.fi-url-admin-forms .fi-main{
     @apply px-0 max-w-full h-full bg-zinc-100;
 }
 
 .forms-page > section{
     @apply py-0 my-0;
-} */
+}
 
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
