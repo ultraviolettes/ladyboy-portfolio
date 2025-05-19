@@ -57,4 +57,9 @@ class User extends Authenticatable
             ->map(fn (string $name) => Str::of($name)->substr(0, 1))
             ->implode('');
     }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return str_ends_with($this->email, '@ladyboy.studio') && $this->hasVerifiedEmail();
+    }
 }
