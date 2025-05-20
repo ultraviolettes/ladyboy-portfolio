@@ -7,57 +7,32 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700&display=swap" rel="stylesheet">
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    <!-- Preload frame images -->
+    @foreach (range(1,6) as $frame)
+    <link rel="preload" href="{{ Vite::asset('resources/img/frames/frame-'.$frame.'.png') }}" as="image">
+    @endforeach
 
-        html, body {
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #000;
-            color: #fff;
-            font-family: 'Unbounded', sans-serif;
-            overflow: hidden;
-        }
-
-        .loader-container {
-            text-align: center;
-            animation: fadeIn 1.5s ease-out forwards;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-    </style>
+    @vite(['resources/js/app.js', 'resources/css/loader.css'])
 @endsection
 
 @section('content')
-    <div class="loader-container overflow-hidden">
-        <div class="img-container flex flex-col items-center justify-center relative">
-            <div>
+    <div class="loader-container overflow-hidden h-screen w-full">
+        <div class="img-container flex flex-col items-center justify-center relative h-full w-full">
+            <div class="character-container relative flex items-center justify-center w-[80vw] h-[80vh]" id="character-container">
                 @foreach (range(1,6) as $frame )
                 <img src="{{ Vite::asset('resources/img/frames/frame-'.$frame.'.png') }}"
-                     alt="illustration Ladyboy Studio" class="max-w-full max-h-[90vh] mx-auto"/>
+                     alt="illustration Ladyboy Studio"
+                     class="character-frame mx-auto absolute opacity-0 w-[80vw]x@ h-[80vh] object-contain"
+                     data-frame="{{ $frame }}" />
                 @endforeach
             </div>
-            <div class="fleche cursor-pointer hover:opacity-80 transition-opacity duration-300" style="margin-top: 2rem;">
+            <div class="fleche cursor-pointer hover:opacity-80 transition-opacity duration-300 mt-4">
                 <img src="{{ Vite::asset('resources/img/fleche.png') }}" class="w-32 h-32" alt="Click to enter">
             </div>
         </div>
     </div>
 
+{{--
     <div class="shape-wrap">
         <svg class="shape" preserveAspectRatio="none" viewBox="0 0 1440 800" style="display: none;">
             <path
@@ -68,4 +43,5 @@
 
     <!-- Hidden container for next page content -->
     <div id="next-page-content" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 90;"></div>
+--}}
 @endsection

@@ -10,6 +10,18 @@
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
+<!-- Preload custom font -->
+<link rel="preload" href="{{ Vite::asset('resources/fonts/MilkywayRoundedTyp.otf') }}" as="font" type="font/otf" crossorigin>
+<style>
+    @font-face {
+        font-family: 'MilkywayRoundedTyp';
+        src: url('{{ Vite::asset('resources/fonts/MilkywayRoundedTyp.otf') }}') format('opentype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+    }
+</style>
+
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 @if(function_exists('fluxAppearance'))
     @fluxAppearance
