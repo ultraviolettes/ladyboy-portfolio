@@ -3,15 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProjectResource\Pages;
-use App\Filament\Resources\ProjectResource\RelationManagers;
 use App\Models\Project;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProjectResource extends Resource
 {
@@ -39,7 +36,7 @@ class ProjectResource extends Resource
             ->columns([
                 //
                 Tables\Columns\SpatieMediaLibraryImageColumn::make('images')
-                ->conversion('thumb'),
+                    ->conversion('thumb'),
                 Tables\Columns\TextColumn::make('title')->searchable(),
                 Tables\Columns\TextColumn::make('external_link')->searchable(),
                 Tables\Columns\TextColumn::make('created_at')->searchable(),

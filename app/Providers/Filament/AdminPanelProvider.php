@@ -55,6 +55,6 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-             ->brandName('Ladyboy Studio Admin');
+            ->brandName('Ladyboy Studio Admin');
     }
 }
