@@ -83,14 +83,25 @@ export default class ColumnScroll {
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
 
-        let newIndex = this.currentProjectIndex;
-        if (e.key === 'ArrowLeft') {
-          newIndex = (newIndex - 1 + this.projectItems.length) % this.projectItems.length;
+        // If we have multiple images for the current project, navigate between them
+        if (this.currentProjectImages && this.currentProjectImages.length > 1) {
+          let newImageIndex = this.currentImageIndex;
+          if (e.key === 'ArrowLeft') {
+            newImageIndex = (newImageIndex - 1 + this.currentProjectImages.length) % this.currentProjectImages.length;
+          } else {
+            newImageIndex = (newImageIndex + 1) % this.currentProjectImages.length;
+          }
+          this.switchProjectImage(newImageIndex);
         } else {
-          newIndex = (newIndex + 1) % this.projectItems.length;
+          // Otherwise, navigate between projects
+          let newProjectIndex = this.currentProjectIndex;
+          if (e.key === 'ArrowLeft') {
+            newProjectIndex = (newProjectIndex - 1 + this.projectItems.length) % this.projectItems.length;
+          } else {
+            newProjectIndex = (newProjectIndex + 1) % this.projectItems.length;
+          }
+          this.switchProject(newProjectIndex);
         }
-
-        this.switchProject(newIndex);
       }
     });
   }
@@ -99,11 +110,18 @@ export default class ColumnScroll {
     const projectId = item.dataset.projectId;
     const projectTitle = item.dataset.projectTitle;
     const projectDescription = item.dataset.projectDescription;
+    const projectImages = JSON.parse(item.dataset.projectImages || '[]');
     const imgSrc = item.querySelector('img').src;
     const imgAlt = item.querySelector('img').alt;
 
     // Find the index of the clicked project
     this.currentProjectIndex = this.projectItems.findIndex(p => p === item);
+
+    // Store the current image index within the project
+    this.currentImageIndex = 0;
+
+    // Store all images for the current project
+    this.currentProjectImages = projectImages;
 
     // Get the position and dimensions of the clicked item
     const itemRect = item.getBoundingClientRect();
@@ -131,29 +149,40 @@ export default class ColumnScroll {
     // Clear existing thumbnails
     this.projectDetailsThumbnails.innerHTML = '';
 
-    // Create thumbnails for all projects
-    this.projectItems.forEach((project, index) => {
+    // Create thumbnails for all images of the current project
+    if (projectImages.length > 0) {
+      projectImages.forEach((imageUrl, index) => {
+        const thumbnail = document.createElement('div');
+        thumbnail.className = 'project-details__thumbnail';
+        if (index === 0) {
+          thumbnail.classList.add('active');
+        }
+
+        const thumbnailImg = document.createElement('img');
+        thumbnailImg.src = imageUrl;
+        thumbnailImg.alt = `${projectTitle} - Image ${index + 1}`;
+
+        thumbnail.appendChild(thumbnailImg);
+
+        // Add click event to thumbnail
+        thumbnail.addEventListener('click', () => {
+          this.switchProjectImage(index);
+        });
+
+        this.projectDetailsThumbnails.appendChild(thumbnail);
+      });
+    } else {
+      // Fallback if no images are found
       const thumbnail = document.createElement('div');
-      thumbnail.className = 'project-details__thumbnail';
-      if (index === this.currentProjectIndex) {
-        thumbnail.classList.add('active');
-      }
+      thumbnail.className = 'project-details__thumbnail active';
 
       const thumbnailImg = document.createElement('img');
-      thumbnailImg.src = project.querySelector('img').src;
-      thumbnailImg.alt = project.querySelector('img').alt;
+      thumbnailImg.src = imgSrc;
+      thumbnailImg.alt = imgAlt;
 
       thumbnail.appendChild(thumbnailImg);
-
-      // Add click event to thumbnail
-      thumbnail.addEventListener('click', () => {
-        if (index !== this.currentProjectIndex) {
-          this.switchProject(index);
-        }
-      });
-
       this.projectDetailsThumbnails.appendChild(thumbnail);
-    });
+    }
 
     // Show project details container (but keep content invisible)
     this.projectDetails.classList.add('active');
@@ -207,28 +236,61 @@ export default class ColumnScroll {
   switchProject(index) {
     // Update current index
     this.currentProjectIndex = index;
+    this.currentImageIndex = 0;
 
     // Get the project item
     const item = this.projectItems[index];
 
-    // Update thumbnails
-    const thumbnails = this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail');
-    thumbnails.forEach((thumb, i) => {
-      if (i === index) {
-        thumb.classList.add('active');
-      } else {
-        thumb.classList.remove('active');
-      }
-    });
+    // Parse project images
+    const projectImages = JSON.parse(item.dataset.projectImages || '[]');
+    this.currentProjectImages = projectImages;
 
     // Update project details
     const projectTitle = item.dataset.projectTitle;
     const projectDescription = item.dataset.projectDescription;
-    const imgSrc = item.querySelector('img').src;
+    const imgSrc = projectImages.length > 0 ? projectImages[0] : item.querySelector('img').src;
     const imgAlt = item.querySelector('img').alt;
 
     // Get the main content container
     const mainContent = this.projectDetails.querySelector('.project-details__main-content');
+
+    // Clear existing thumbnails
+    this.projectDetailsThumbnails.innerHTML = '';
+
+    // Create thumbnails for all images of the current project
+    if (projectImages.length > 0) {
+      projectImages.forEach((imageUrl, idx) => {
+        const thumbnail = document.createElement('div');
+        thumbnail.className = 'project-details__thumbnail';
+        if (idx === 0) {
+          thumbnail.classList.add('active');
+        }
+
+        const thumbnailImg = document.createElement('img');
+        thumbnailImg.src = imageUrl;
+        thumbnailImg.alt = `${projectTitle} - Image ${idx + 1}`;
+
+        thumbnail.appendChild(thumbnailImg);
+
+        // Add click event to thumbnail
+        thumbnail.addEventListener('click', () => {
+          this.switchProjectImage(idx);
+        });
+
+        this.projectDetailsThumbnails.appendChild(thumbnail);
+      });
+    } else {
+      // Fallback if no images are found
+      const thumbnail = document.createElement('div');
+      thumbnail.className = 'project-details__thumbnail active';
+
+      const thumbnailImg = document.createElement('img');
+      thumbnailImg.src = imgSrc;
+      thumbnailImg.alt = imgAlt;
+
+      thumbnail.appendChild(thumbnailImg);
+      this.projectDetailsThumbnails.appendChild(thumbnail);
+    }
 
     // Animate content change
     gsap.timeline()
@@ -277,6 +339,44 @@ export default class ColumnScroll {
         duration: 0.4,
         ease: 'power2.out'
       }, '-=0.2');
+  }
+
+  switchProjectImage(index) {
+    // Update current image index
+    this.currentImageIndex = index;
+
+    // Get the image URL
+    const imageUrl = this.currentProjectImages[index];
+
+    // Update thumbnails
+    const thumbnails = this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail');
+    thumbnails.forEach((thumb, i) => {
+      if (i === index) {
+        thumb.classList.add('active');
+      } else {
+        thumb.classList.remove('active');
+      }
+    });
+
+    // Animate image change
+    gsap.to(this.projectDetailsImage, {
+      opacity: 0,
+      scale: 0.95,
+      duration: 0.3,
+      ease: 'power2.in',
+      onComplete: () => {
+        // Update image
+        this.projectDetailsImage.src = imageUrl;
+
+        // Fade in image
+        gsap.to(this.projectDetailsImage, {
+          opacity: 1,
+          scale: 1,
+          duration: 0.4,
+          ease: 'power2.out'
+        });
+      }
+    });
   }
 
   closeProjectDetails() {

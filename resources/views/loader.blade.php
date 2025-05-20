@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- Preload frame images -->
-    @foreach (range(1,6) as $frame)
+    @foreach (range(0,9) as $frame)
     <link rel="preload" href="{{ Vite::asset('resources/img/frames/frame-'.$frame.'.png') }}" as="image">
     @endforeach
 
@@ -19,7 +19,7 @@
     <div class="loader-container overflow-hidden h-screen w-full">
         <div class="img-container flex flex-col items-center justify-center relative h-full w-full">
             <div class="character-container relative flex items-center justify-center w-[80vw] h-[80vh]" id="character-container">
-                @foreach (range(1,6) as $frame )
+                @foreach (range(0,9) as $frame )
                 <img src="{{ Vite::asset('resources/img/frames/frame-'.$frame.'.png') }}"
                      alt="illustration Ladyboy Studio"
                      class="character-frame mx-auto absolute opacity-0 w-[80vw]x@ h-[80vh] object-contain"

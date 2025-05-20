@@ -26,7 +26,8 @@ class ProjectResource extends Resource
                 ->multiple()
                 ->image()
                 ->directory('projects')
-                ->preserveFilenames(),
+                ->preserveFilenames()
+                ->reorderable(),
         ]);
     }
 

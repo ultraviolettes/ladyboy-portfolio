@@ -29,15 +29,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Middle row
         if (gridY === 1) {
-            if (gridX === 0) return 4; // Middle-left
-            if (gridX === 2) return 5; // Middle-right
+            if (gridX === 0) return 8; // Middle-left
+            if (gridX === 2) return 4; // Middle-right
         }
 
         // Bottom row
         if (gridY === 2) {
-            if (gridX === 0) return 1; // Bottom-left (same as top-left)
-            if (gridX === 1) return 2; // Bottom-center (same as top-center)
-            if (gridX === 2) return 3; // Bottom-right (same as top-right)
+            if (gridX === 0) return 7; // Bottom-left (same as top-left)
+            if (gridX === 1) return 6; // Bottom-center (same as top-center)
+            if (gridX === 2) return 5; // Bottom-right (same as top-right)
         }
 
         // Fallback

@@ -20,7 +20,11 @@
         @foreach ($projects->chunk(ceil($projects->count() / 3)) as $projectChunk) <!-- Divise les projets en 3 colonnes -->
             <div class="column">
                 @foreach ($projectChunk as $project)
-                    <div class="column__item" data-project-id="{{ $project->id }}" data-project-title="{{ $project->title }}" data-project-description="{{ $project->description }}">
+                    <div class="column__item"
+                        data-project-id="{{ $project->id }}"
+                        data-project-title="{{ $project->title }}"
+                        data-project-description="{{ $project->description }}"
+                        data-project-images="{{ $project->getMedia()->map(function($media) { return $media->getUrl(); })->toJson() }}">
                         <img class="column__item-img" src="{{ $project->getFirstMediaUrl() }}" alt="{{ $project->title }}">
                     </div>
                 @endforeach
