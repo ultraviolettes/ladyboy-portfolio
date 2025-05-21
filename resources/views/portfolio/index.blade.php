@@ -17,7 +17,7 @@
                 'column-wrap' => true,
                 'column-wrap--height' => $loop->odd
             ])>
-                <div class="column" data-scroll-section>
+                <div class="column">
                     @foreach ($projectChunk as $project)
                         <div class="column__item"
                             data-project-id="{{ $project->id }}"

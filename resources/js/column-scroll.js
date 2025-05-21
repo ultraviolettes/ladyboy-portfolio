@@ -1,12 +1,14 @@
 import {gsap} from 'gsap';
-import LocomotiveScroll from 'locomotive-scroll';
+import Lenis from 'lenis';
 
 export default class ColumnScroll {
     constructor(container) {
         this.container = container;
         this.columns = [...container.querySelectorAll('.column')];
         // first and third columns
-        this.oddColumns = this.columns.filter((_, index) => index != 1);
+        this.oddColumns = this.columns.filter((_, index) => index !== 1);
+        this.evenColumns = this.columns.filter((_, index) => index === 1);
+
         this.projectItems = [...container.querySelectorAll('.column__item')];
         this.projectDetails = document.querySelector('.project-details');
         this.projectDetailsContent = this.projectDetails.querySelector('.project-details__content');
@@ -22,6 +24,8 @@ export default class ColumnScroll {
         this.currentProjectIndex = -1;
         // Scroll cached value
         this.lastscroll = 0;
+        this.scrollSpeedEven = 1.2;
+        this.scrollSpeedOdd = 2.5;
 
         // Initialize
         this.init();
@@ -29,34 +33,41 @@ export default class ColumnScroll {
     }
 
     init() {
-        // Initialize Locomotive Scroll
-        this.scroll = new LocomotiveScroll({
-            el: this.container,
-            smooth: true,
-            lerp: 0.13,
-            multiplier: 1.2,
-            tablet: {
-                smooth: true,
-                breakpoint: 1024
-            },
-            smartphone: {
-                smooth: true
-            }
+
+        // Initialize Lenis for smooth scrolling
+        this.scroll = new Lenis({
+            content: this.container,
+            lerp: 0.2,
+            duration: 1.2,
+            orientation: 'vertical',
+            gestureOrientation: 'vertical',
+            smoothWheel: true,
+            smoothTouch: true,
+            touchMultiplier: 2,
+            infinite: false
         });
 
-         // Locomotive scroll event: translate the first and third grid column -1*scrollValue px.
-        this.scroll.on('scroll', obj => {
-            this.lastscroll = obj.scroll.y;
-            this.oddColumns.forEach(column => column.style.transform = `translateY(${obj.scroll.y}px)`);
+        // Lenis scroll event: translate the first and third grid column based on scroll position
+        this.scroll.on('scroll', ({ scroll, limit, velocity, direction, progress }) => {
+            this.oddColumns.forEach(column => column.style.transform = `translateY(${scroll * this.scrollSpeedOdd}px)`);
+            this.evenColumns.forEach(column => column.style.transform = `translateY(${-scroll * this.scrollSpeedEven}px)`);
         });
+
+        // Set up the animation frame for Lenis
+        const raf = (time) => {
+            this.scroll.raf(time);
+            requestAnimationFrame(raf);
+        };
+        requestAnimationFrame(raf);
+
         // Update scroll on window resize
         window.addEventListener('resize', () => {
-            this.scroll.update();
+            this.scroll.resize();
         });
 
         // Refresh scroll after a short delay to ensure all elements are properly sized
         setTimeout(() => {
-            this.scroll.update();
+            this.scroll.resize();
         }, 500);
     }
 
@@ -201,7 +212,7 @@ export default class ColumnScroll {
         // Show project details container (but keep content invisible)
         this.projectDetails.classList.add('active');
 
-        // Disable scrolling on body and locomotive scroll
+        // Disable scrolling on body and Lenis scroll
         document.body.style.overflow = 'hidden';
         if (this.scroll) {
             this.scroll.stop();
@@ -422,10 +433,10 @@ export default class ColumnScroll {
                         // Re-enable scrolling on body
                         document.body.style.overflow = '';
 
-                        // Restart LocomotiveScroll
+                        // Restart Lenis scroll
                         if (this.scroll) {
                             this.scroll.start();
-                            this.scroll.update();
+                            this.scroll.resize();
                         }
 
                         // Reset state
@@ -471,8 +482,8 @@ export default class ColumnScroll {
 
         // Restore the scroll position and animation after the animation completes
         setTimeout(() => {
-            // Update Locomotive Scroll
-            this.scroll.update();
+            // Update Lenis scroll
+            this.scroll.resize();
         }, 1000); // Wait for the animation to complete
     }
 }
