@@ -11,9 +11,9 @@
 </div>
 
 <main>
-    <div class="content" data-scroll-container>
+    <div class="content columns" data-scroll-container>
         @foreach ($projects->chunk(ceil($projects->count() / 3)) as $projectChunk) <!-- Divise les projets en 3 colonnes -->
-            <div class="column" data-scroll data-scroll-speed="{{ $loop->index == 0 ? '-1' : ($loop->index == 1 ? '1' : '-1') }}">
+            <div class="column" data-scroll data-scroll-speed="{{ $loop->index === 0 ? '-1' : ($loop->index === 1 ? '1' : '-1') }}" data-scroll-section>
                 @foreach ($projectChunk as $project)
                     <div class="column__item"
                         data-project-id="{{ $project->id }}"
