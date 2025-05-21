@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('character-container');
     const frames = document.querySelectorAll('.character-frame');
     const frameCount = frames.length;
+    const arrow = document.querySelector('.fleche');
+    const introContainer = document.querySelector('.intro');
 
     // Show first frame by default
     gsap.set(frames[0], { opacity: 1 });
@@ -67,10 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Only update if the frame has changed
         if (newFrameIndex !== currentFrameIndex && newFrameIndex < frameCount) {
-            console.log(
-                'newFrameIndex', newFrameIndex,
-                'currentFrameIndex', currentFrameIndex,
-            )
+
             // Hide all frames (no transition)
             frames.forEach(frame => {
                 frame.style.opacity = 0;
@@ -82,5 +81,32 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update current frame index
             currentFrameIndex = newFrameIndex;
         }
+    });
+
+    // Page transition when clicking on the arrow
+    arrow.addEventListener('click', function() {
+
+        // Create the animation timeline
+        const morphTimeline = gsap.timeline({
+            onComplete: function() {
+                // After animation completes, navigate to portfolio page
+                window.location.href = '/portfolio';
+            }
+        });
+
+        // Move the intro container up and fade it out
+        morphTimeline.to(introContainer, {
+            y: '-100%',
+            opacity: 0,
+            duration: 1.2,
+            ease: 'power3.inOut'
+        }, 0);
+
+        // Fade out the character and arrow faster than the container
+        morphTimeline.to([container, arrow], {
+            opacity: 0,
+            duration: 0.5,
+            ease: 'power2.out'
+        }, 0);
     });
 });

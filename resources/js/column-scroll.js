@@ -7,7 +7,6 @@ export default class ColumnScroll {
         this.columns = [...container.querySelectorAll('.column')];
         // first and third columns
         this.oddColumns = this.columns.filter((_, index) => index != 1);
-        this.oddColumns = this.columns.filter((_, index) => index != 1);
         this.projectItems = [...container.querySelectorAll('.column__item')];
         this.projectDetails = document.querySelector('.project-details');
         this.projectDetailsContent = this.projectDetails.querySelector('.project-details__content');
@@ -45,6 +44,11 @@ export default class ColumnScroll {
             }
         });
 
+         // Locomotive scroll event: translate the first and third grid column -1*scrollValue px.
+        this.scroll.on('scroll', obj => {
+            this.lastscroll = obj.scroll.y;
+            this.oddColumns.forEach(column => column.style.transform = `translateY(${obj.scroll.y}px)`);
+        });
         // Update scroll on window resize
         window.addEventListener('resize', () => {
             this.scroll.update();
@@ -475,7 +479,7 @@ export default class ColumnScroll {
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
-    const container = document.querySelector('.content');
+    const container = document.querySelector('.columns');
     if (container) {
         new ColumnScroll(container);
     }
