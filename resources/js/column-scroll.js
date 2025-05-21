@@ -1,11 +1,13 @@
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import LocomotiveScroll from 'locomotive-scroll';
 
 export default class ColumnScroll {
   constructor(container) {
     this.container = container;
     this.columns = [...container.querySelectorAll('.column')];
-    this.columnCount = this.columns.length;
+    // first and third columns
+    this.oddColumns = this.columns.filter((_, index) => index != 1);
+    this.oddColumns = this.columns.filter((_, index) => index != 1);
     this.projectItems = [...container.querySelectorAll('.column__item')];
     this.projectDetails = document.querySelector('.project-details');
     this.projectDetailsContent = this.projectDetails.querySelector('.project-details__content');
@@ -19,6 +21,8 @@ export default class ColumnScroll {
     // State
     this.isGridView = true;
     this.currentProjectIndex = -1;
+    // Scroll cached value
+    this.lastscroll = 0;
 
     // Initialize
     this.init();
@@ -26,24 +30,35 @@ export default class ColumnScroll {
   }
 
   init() {
-    // Set up the scroll animations for each column
-    this.columns.forEach((column, index) => {
-      const direction = index % 2 ? 1 : -1; // Alternate direction
-      const speed = 0.1 + (index * 0.05); // Vary speed slightly
-
-      // Create scroll animation for this column
-      gsap.to(column, {
-        y: () => direction * (ScrollTrigger.maxScroll(window) - column.offsetHeight),
-        ease: 'none',
-        scrollTrigger: {
-          trigger: this.container,
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: speed,
-          invalidateOnRefresh: true
-        }
-      });
+    // Initialize Locomotive Scroll
+    this.scroll = new LocomotiveScroll({
+      el: this.container,
+      smooth: true,
+      lerp: 0.13,
+      tablet: {
+        smooth: true,
+        breakpoint: 1024
+      },
+      smartphone: {
+        smooth: true
+      }
     });
+
+    // Locomotive scroll event: translate the first and third grid column -1*scrollValue px.
+    this.scroll.on('scroll', obj => {
+        this.lastscroll = obj.scroll.y;
+        this.oddColumns.forEach(column => column.style.transform = `translateY(${obj.scroll.y}px)`);
+    });
+
+    // Update scroll on window resize
+    window.addEventListener('resize', () => {
+      this.scroll.update();
+    });
+
+    // Refresh scroll after a short delay to ensure all elements are properly sized
+    setTimeout(() => {
+      this.scroll.update();
+    }, 500);
   }
 
   initProjectDetails() {
@@ -149,46 +164,49 @@ export default class ColumnScroll {
     // Clear existing thumbnails
     this.projectDetailsThumbnails.innerHTML = '';
 
-    // Create thumbnails for all images of the current project
-    if (projectImages.length > 0) {
-      projectImages.forEach((imageUrl, index) => {
-        const thumbnail = document.createElement('div');
-        thumbnail.className = 'project-details__thumbnail';
-        if (index === 0) {
-          thumbnail.classList.add('active');
-        }
+    // Create thumbnails for all project items (not just images of current project)
+    // This creates the row of thumbnails beneath the main image
+    this.projectItems.forEach((projectItem, idx) => {
+      const isCurrentProject = idx === this.currentProjectIndex;
+      const thumbImgSrc = projectItem.querySelector('img').src;
+      const thumbImgAlt = projectItem.querySelector('img').alt;
 
-        const thumbnailImg = document.createElement('img');
-        thumbnailImg.src = imageUrl;
-        thumbnailImg.alt = `${projectTitle} - Image ${index + 1}`;
-
-        thumbnail.appendChild(thumbnailImg);
-
-        // Add click event to thumbnail
-        thumbnail.addEventListener('click', () => {
-          this.switchProjectImage(index);
-        });
-
-        this.projectDetailsThumbnails.appendChild(thumbnail);
-      });
-    } else {
-      // Fallback if no images are found
       const thumbnail = document.createElement('div');
-      thumbnail.className = 'project-details__thumbnail active';
+      thumbnail.className = 'project-details__thumbnail';
+      if (isCurrentProject) {
+        thumbnail.classList.add('active');
+      }
 
       const thumbnailImg = document.createElement('img');
-      thumbnailImg.src = imgSrc;
-      thumbnailImg.alt = imgAlt;
+      thumbnailImg.src = thumbImgSrc;
+      thumbnailImg.alt = thumbImgAlt;
 
       thumbnail.appendChild(thumbnailImg);
+
+      // Add click event to thumbnail to switch projects
+      thumbnail.addEventListener('click', () => {
+        if (isCurrentProject && projectImages.length > 1) {
+          // If clicking on current project thumbnail and it has multiple images,
+          // cycle through its images
+          const nextImageIndex = (this.currentImageIndex + 1) % projectImages.length;
+          this.switchProjectImage(nextImageIndex);
+        } else {
+          // Otherwise switch to that project
+          this.switchProject(idx);
+        }
+      });
+
       this.projectDetailsThumbnails.appendChild(thumbnail);
-    }
+    });
 
     // Show project details container (but keep content invisible)
     this.projectDetails.classList.add('active');
 
-    // Disable scrolling on body
+    // Disable scrolling on body and locomotive scroll
     document.body.style.overflow = 'hidden';
+    if (this.scroll) {
+      this.scroll.stop();
+    }
 
     // Set grid view state
     this.isGridView = false;
@@ -197,14 +215,14 @@ export default class ColumnScroll {
     setTimeout(() => {
       const targetRect = this.projectDetailsImage.getBoundingClientRect();
 
-      // Animate the cloned image to the target position
+      // Animate the cloned image to the target position with a more dramatic scale effect
       gsap.to(imgClone, {
         top: targetRect.top,
         left: targetRect.left,
         width: targetRect.width,
         height: targetRect.height,
-        duration: 0.8,
-        ease: 'power3.inOut',
+        duration: 1,
+        ease: 'expo.out',
         onComplete: () => {
           // Remove the clone and show the actual image
           imgClone.remove();
@@ -223,10 +241,17 @@ export default class ColumnScroll {
 
           // The main content (image and description) animations are handled by CSS transitions
 
-          // Animate thumbnails
-          gsap.fromTo(this.projectDetailsThumbnails,
+          // Animate thumbnails with a staggered effect
+          gsap.fromTo(this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail'),
             { y: 30, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.5, delay: 0.6, ease: 'power2.out' }
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.5,
+              stagger: 0.05,
+              delay: 0.4,
+              ease: 'power2.out'
+            }
           );
         }
       });
@@ -254,43 +279,15 @@ export default class ColumnScroll {
     // Get the main content container
     const mainContent = this.projectDetails.querySelector('.project-details__main-content');
 
-    // Clear existing thumbnails
-    this.projectDetailsThumbnails.innerHTML = '';
-
-    // Create thumbnails for all images of the current project
-    if (projectImages.length > 0) {
-      projectImages.forEach((imageUrl, idx) => {
-        const thumbnail = document.createElement('div');
-        thumbnail.className = 'project-details__thumbnail';
-        if (idx === 0) {
-          thumbnail.classList.add('active');
-        }
-
-        const thumbnailImg = document.createElement('img');
-        thumbnailImg.src = imageUrl;
-        thumbnailImg.alt = `${projectTitle} - Image ${idx + 1}`;
-
-        thumbnail.appendChild(thumbnailImg);
-
-        // Add click event to thumbnail
-        thumbnail.addEventListener('click', () => {
-          this.switchProjectImage(idx);
-        });
-
-        this.projectDetailsThumbnails.appendChild(thumbnail);
-      });
-    } else {
-      // Fallback if no images are found
-      const thumbnail = document.createElement('div');
-      thumbnail.className = 'project-details__thumbnail active';
-
-      const thumbnailImg = document.createElement('img');
-      thumbnailImg.src = imgSrc;
-      thumbnailImg.alt = imgAlt;
-
-      thumbnail.appendChild(thumbnailImg);
-      this.projectDetailsThumbnails.appendChild(thumbnail);
-    }
+    // Update thumbnails to show the active project
+    const thumbnails = this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail');
+    thumbnails.forEach((thumb, idx) => {
+      if (idx === index) {
+        thumb.classList.add('active');
+      } else {
+        thumb.classList.remove('active');
+      }
+    });
 
     // Animate content change
     gsap.timeline()
@@ -415,7 +412,7 @@ export default class ColumnScroll {
           width: itemRect.width,
           height: itemRect.height,
           duration: 0.8,
-          ease: 'power3.inOut',
+          ease: 'expo.inOut',
           onComplete: () => {
             // Remove the clone
             imgClone.remove();
@@ -425,6 +422,12 @@ export default class ColumnScroll {
 
             // Re-enable scrolling on body
             document.body.style.overflow = '';
+
+            // Restart LocomotiveScroll
+            if (this.scroll) {
+              this.scroll.start();
+              this.scroll.update();
+            }
 
             // Reset state
             this.isGridView = true;
@@ -442,10 +445,11 @@ export default class ColumnScroll {
         duration: 0.3,
         ease: 'power2.in'
       })
-      .to(this.projectDetailsThumbnails, {
+      .to(this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail'), {
         opacity: 0,
         y: 30,
         duration: 0.3,
+        stagger: 0.03,
         ease: 'power2.in'
       }, '-=0.2')
       .to(this.projectDetailsTitle, {
@@ -468,7 +472,8 @@ export default class ColumnScroll {
 
     // Restore the scroll position and animation after the animation completes
     setTimeout(() => {
-      this.init();
+      // Update Locomotive Scroll
+      this.scroll.update();
     }, 1000); // Wait for the animation to complete
   }
 }

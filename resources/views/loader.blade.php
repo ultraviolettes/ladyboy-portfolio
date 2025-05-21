@@ -3,16 +3,12 @@
 @section('body_class', 'flex flex-col items-center justify-center relative')
 
 @section('styles')
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700&display=swap" rel="stylesheet">
-
     <!-- Preload frame images -->
     @foreach (range(0,8) as $frame)
     <link rel="preload" href="{{ Vite::asset('resources/img/frames/frame-'.$frame.'.png') }}" as="image">
     @endforeach
 
-    @vite(['resources/js/app.js', 'resources/css/loader.css'])
+    @vite(['resources/js/app.js', 'resources/js/loader.js', 'resources/css/app.css', 'resources/css/loader.css'])
 @endsection
 
 @section('content')

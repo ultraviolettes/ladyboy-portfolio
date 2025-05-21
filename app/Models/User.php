@@ -63,7 +63,7 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
 
-        if (env('APP_ENV') === 'local') {
+        if (app()->environment('local')) {
             return true;
         }
 

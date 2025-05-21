@@ -4,11 +4,13 @@
         @include('partials.head')
         @yield('styles')
     </head>
-    <body class="@yield('body_class', 'flex flex-col items-center justify-center relative')">
+    <body class="@yield('body_class', '')">
 
-        <main>
-            @yield('content')
-        </main>
+        @yield('content')
+
+        <footer>
+            @include('partials.footer')
+        </footer>
 
         @yield('scripts')
     </body>
