@@ -23,3 +23,5 @@ yarn-error.log
 /.zed
 
 resources/.DS_Store
+
+resources/img/.DS_Store
