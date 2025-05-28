@@ -136,7 +136,7 @@ export default class ColumnScroll {
         const projectTitle = item.dataset.projectTitle;
         const projectDescription = item.dataset.projectDescription;
         const projectImages = JSON.parse(item.dataset.projectImages || '[]');
-        const imgSrc = item.querySelector('img').src;
+        const imgSrc = item.dataset.originalImage || item.querySelector('img').src;
         const imgAlt = item.querySelector('img').alt;
 
         // Find the index of the clicked project
@@ -208,6 +208,13 @@ export default class ColumnScroll {
 
             this.projectDetailsThumbnails.appendChild(thumbnail);
         });
+
+        // Add 'few-thumbnails' class if there are 10 or fewer thumbnails
+        if (this.projectItems.length <= 10) {
+            this.projectDetailsThumbnails.classList.add('few-thumbnails');
+        } else {
+            this.projectDetailsThumbnails.classList.remove('few-thumbnails');
+        }
 
         // Show project details container (but keep content invisible)
         this.projectDetails.classList.add('active');

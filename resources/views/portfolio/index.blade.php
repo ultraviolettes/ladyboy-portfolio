@@ -23,8 +23,9 @@
                             data-project-id="{{ $project->id }}"
                             data-project-title="{{ $project->title }}"
                             data-project-description="{{ $project->description }}"
-                            data-project-images="{{ $project->getMedia()->map(function($media) { return $media->getUrl(); })->toJson() }}">
-                            <img class="column__item-img" src="{{ $project->getFirstMediaUrl() }}" alt="{{ $project->title }}">
+                            data-project-images="{{ $project->getMedia()->map(function($media) { return $media->getUrl(); })->toJson() }}"
+                            data-original-image="{{ $project->getFirstMediaUrl() }}">
+                            <img class="column__item-img" src="{{ $project->getFirstMediaUrl('default', 'column') }}" alt="{{ $project->title }}">
                         </div>
                     @endforeach
                 </div>

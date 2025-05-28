@@ -23,7 +23,7 @@ html.has-scroll-dragging {
     user-select: none;
 }
 main {
-	overflow: hidden;
+	overflow: visible;
 	position: relative;
 }
 
@@ -46,6 +46,7 @@ main::after {
 	justify-content: center;
     gap: 4vw;
     min-height: 150vh; /* Ensure enough scrolling space */
+    overflow: visible; /* Ensure content is visible when scrolling */
 }
 
 .column-wrap {
@@ -54,6 +55,7 @@ main::after {
 	display: flex;
 	flex-direction: column;
 	padding: 5vh 0 15vh;
+	overflow: visible; /* Ensure content is visible when scrolling */
 }
 .column-wrap--height {
 	height: 100vh;
@@ -61,10 +63,12 @@ main::after {
 }
 .column {
     flex: 1;
+    width: calc(33.333% - 2.667vw); /* Equal width for all columns (100% / 3 - gap adjustment) */
     min-width: 300px;
     scroll-behavior: smooth;
     transform: translate3d(0, 0, 0);
     will-change: transform;
+    overflow: visible; /* Ensure content is visible when scrolling */
 }
 .column-wrap--height .column {
 	flex-direction: column-reverse;
@@ -107,7 +111,8 @@ main::after {
     transform: translateZ(0);
 }
 .column__item-img {
-    width: 100%;
+    width: 500px;
+    max-width: 100%;
     display: block;
     border-radius: 10px;
     transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
@@ -276,16 +281,31 @@ main::after {
     overflow-x: auto;
     padding: 1rem 0;
     margin-top: 2rem;
-    justify-content: center;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap; /* Always use nowrap for horizontal scrolling */
+    justify-content: flex-start; /* Start from the left */
+    scrollbar-width: thin; /* For Firefox */
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent; /* For Firefox */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
-@media (max-width: 1024px) {
-    .project-details__thumbnails {
-        justify-content: flex-start;
-        flex-wrap: nowrap;
-    }
+.project-details__thumbnails::-webkit-scrollbar {
+    height: 6px; /* Height of the scrollbar */
+}
+
+.project-details__thumbnails::-webkit-scrollbar-track {
+    background: transparent; /* Track background */
+}
+
+.project-details__thumbnails::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3); /* Thumb color */
+    border-radius: 3px; /* Rounded corners */
+}
+
+/* When there are 10 or fewer thumbnails, center them */
+.project-details__thumbnails.few-thumbnails {
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .project-details__thumbnail {
