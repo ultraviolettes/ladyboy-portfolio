@@ -18,7 +18,9 @@ html, body {
 .loader-container {
     text-align: center;
 }
-
+.character-container:hover{
+    cursor: pointer;
+}
 .character-frame {
     opacity: 0;
     /* Removed transition for instant eye movement */

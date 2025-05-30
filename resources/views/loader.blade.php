@@ -23,9 +23,7 @@
                 />
                 @endforeach
             </div>
-            <div class="fleche cursor-pointer hover:opacity-80 transition-opacity duration-300 mt-4">
-                <img src="{{ Vite::asset('resources/img/fleche.png') }}" class="w-32 h-32" alt="Click to enter">
-            </div>
+
         </div>
     </div>
 
