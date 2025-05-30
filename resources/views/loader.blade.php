@@ -19,7 +19,8 @@
                 <img src="{{ Vite::asset('resources/img/frames/frame-'.$frame.'.png') }}"
                      alt="illustration Ladyboy Studio"
                      class="character-frame mx-auto absolute opacity-0 w-[80vw]x@ h-[80vh] object-contain"
-                     data-frame="{{ $frame }}" />
+                     data-frame="{{ $frame }}"
+                />
                 @endforeach
             </div>
             <div class="fleche cursor-pointer hover:opacity-80 transition-opacity duration-300 mt-4">

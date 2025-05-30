@@ -83,6 +83,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    container.addEventListener('click', function() {
+        window.location.href = '/portfolio';
+    })
     // Page transition when clicking on the arrow
     arrow.addEventListener('click', function() {
 
