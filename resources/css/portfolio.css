@@ -56,6 +56,7 @@ main::after {
 	flex-direction: column;
 	padding: 5vh 0 15vh;
 	overflow: visible; /* Ensure content is visible when scrolling */
+	width: calc(33.333% - 2.667vw); /* Equal width for all column-wrap elements (100% / 3 - gap adjustment) */
 }
 .column-wrap--height {
 	height: 100vh;
@@ -63,7 +64,7 @@ main::after {
 }
 .column {
     flex: 1;
-    width: calc(33.333% - 2.667vw); /* Equal width for all columns (100% / 3 - gap adjustment) */
+    width: 100%; /* Take full width of parent column-wrap */
     min-width: 300px;
     scroll-behavior: smooth;
     transform: translate3d(0, 0, 0);
@@ -111,10 +112,11 @@ main::after {
     transform: translateZ(0);
 }
 .column__item-img {
-    width: 500px;
+    width: 100%;
     max-width: 100%;
     display: block;
     border-radius: 10px;
+    height: auto;
     transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
                 box-shadow 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
                 filter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -164,6 +166,7 @@ main::after {
 }
 
 .project-details__content {
+    font-family: 'Instrument Sans', sans-serif;
     width: 80%;
     max-width: 1200px;
     display: flex;
@@ -254,13 +257,17 @@ main::after {
 }
 
 .project-details__image img {
+    width: 100%;
     max-width: 100%;
     max-height: 70vh;
     display: block;
     object-fit: contain;
+    height: auto;
 }
 
 .project-details__description {
+    font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     width: 40%;
     font-size: 1.1rem;
     line-height: 1.6;
@@ -309,8 +316,8 @@ main::after {
 }
 
 .project-details__thumbnail {
-    width: 100px;
-    height: 100px;
+    width: 150px;
+    height: 150px;
     border-radius: 5px;
     overflow: hidden;
     cursor: pointer;

@@ -17,11 +17,15 @@ class Project extends Model implements HasMedia
     public function registerMediaConversions(Media $media = null): void
     {
         $this->addMediaConversion('thumb')
-            ->width(200)
-            ->height(200);
+            ->width(300)
+            ->height(300)
+            ->optimize()
+            ->quality(80);
 
         $this->addMediaConversion('column')
-            ->width(500)
+            ->width(800)
+            ->optimize()
+            ->quality(85)
             ->nonQueued();
     }
 }
