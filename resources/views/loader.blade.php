@@ -18,7 +18,7 @@
                 @foreach (range(0,8) as $frame )
                 <img src="{{ Vite::asset('resources/img/frames/frame-'.$frame.'.png') }}"
                      alt="illustration Ladyboy Studio"
-                     class="character-frame mx-auto absolute opacity-0 w-[80vw]x@ h-[80vh] object-contain"
+                     class="character-frame mx-auto absolute opacity-0 w-[80vw] h-[80vh] object-contain"
                      data-frame="{{ $frame }}"
                 />
                 @endforeach

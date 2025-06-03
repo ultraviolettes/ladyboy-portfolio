@@ -44,7 +44,7 @@ export default class ColumnScroll {
             smoothWheel: true,
             smoothTouch: true,
             touchMultiplier: 2,
-            infinite: false
+            infinite: true
         });
 
         // Lenis scroll event: translate the first and third grid column based on scroll position
@@ -162,6 +162,7 @@ export default class ColumnScroll {
         imgClone.style.borderRadius = '10px';
         imgClone.style.zIndex = '1000';
         imgClone.style.transition = 'none';
+        imgClone.style.objectFit = 'cover'; // Ensure consistent object-fit during transition
         document.body.appendChild(imgClone);
 
         // Populate project details from data attributes
@@ -174,43 +175,60 @@ export default class ColumnScroll {
         // Clear existing thumbnails
         this.projectDetailsThumbnails.innerHTML = '';
 
-        // Create thumbnails for all project items (not just images of current project)
-        // This creates the row of thumbnails beneath the main image
-        this.projectItems.forEach((projectItem, idx) => {
-            const isCurrentProject = idx === this.currentProjectIndex;
-            const thumbImgSrc = projectItem.querySelector('img').src;
-            const thumbImgAlt = projectItem.querySelector('img').alt;
-
-            const thumbnail = document.createElement('div');
-            thumbnail.className = 'project-details__thumbnail';
-            if (isCurrentProject) {
-                thumbnail.classList.add('active');
-            }
-
-            const thumbnailImg = document.createElement('img');
-            thumbnailImg.src = thumbImgSrc;
-            thumbnailImg.alt = thumbImgAlt;
-
-            thumbnail.appendChild(thumbnailImg);
-
-            // Add click event to thumbnail to switch projects
-            thumbnail.addEventListener('click', () => {
-                if (isCurrentProject && projectImages.length > 1) {
-                    // If clicking on current project thumbnail and it has multiple images,
-                    // cycle through its images
-                    const nextImageIndex = (this.currentImageIndex + 1) % projectImages.length;
-                    this.switchProjectImage(nextImageIndex);
-                } else {
-                    // Otherwise switch to that project
-                    this.switchProject(idx);
+        // Check if current project has multiple images
+        if (projectImages.length > 1) {
+            // Create thumbnails for all images of the current project
+            projectImages.forEach((imgSrc, idx) => {
+                const thumbnail = document.createElement('div');
+                thumbnail.className = 'project-details__thumbnail';
+                if (idx === 0) {
+                    thumbnail.classList.add('active');
                 }
-            });
 
-            this.projectDetailsThumbnails.appendChild(thumbnail);
-        });
+                const thumbnailImg = document.createElement('img');
+                thumbnailImg.src = imgSrc;
+                thumbnailImg.alt = `${projectTitle || imgAlt} - Image ${idx + 1}`;
+
+                thumbnail.appendChild(thumbnailImg);
+
+                // Add click event to thumbnail to switch images
+                thumbnail.addEventListener('click', () => {
+                    this.switchProjectImage(idx);
+                });
+
+                this.projectDetailsThumbnails.appendChild(thumbnail);
+            });
+        } else {
+            // If current project doesn't have multiple images, create thumbnails for all project items
+            this.projectItems.forEach((projectItem, idx) => {
+                const isCurrentProject = idx === this.currentProjectIndex;
+                const thumbImgSrc = projectItem.querySelector('img').src;
+                const thumbImgAlt = projectItem.querySelector('img').alt;
+
+                const thumbnail = document.createElement('div');
+                thumbnail.className = 'project-details__thumbnail';
+                if (isCurrentProject) {
+                    thumbnail.classList.add('active');
+                }
+
+                const thumbnailImg = document.createElement('img');
+                thumbnailImg.src = thumbImgSrc;
+                thumbnailImg.alt = thumbImgAlt;
+
+                thumbnail.appendChild(thumbnailImg);
+
+                // Add click event to thumbnail to switch projects
+                thumbnail.addEventListener('click', () => {
+                    this.switchProject(idx);
+                });
+
+                this.projectDetailsThumbnails.appendChild(thumbnail);
+            });
+        }
 
         // Add 'few-thumbnails' class if there are 10 or fewer thumbnails
-        if (this.projectItems.length <= 10) {
+        if ((projectImages.length > 1 && projectImages.length <= 10) ||
+            (projectImages.length <= 1 && this.projectItems.length <= 10)) {
             this.projectDetailsThumbnails.classList.add('few-thumbnails');
         } else {
             this.projectDetailsThumbnails.classList.remove('few-thumbnails');
@@ -232,14 +250,18 @@ export default class ColumnScroll {
         setTimeout(() => {
             const targetRect = this.projectDetailsImage.getBoundingClientRect();
 
-            // Animate the cloned image to the target position with a more dramatic scale effect
+            // Preload the target image to ensure dimensions are known
+            const preloadImg = new Image();
+            preloadImg.src = imgSrc;
+
+            // Animate the cloned image to the target position with a smooth transition
             gsap.to(imgClone, {
                 top: targetRect.top,
                 left: targetRect.left,
                 width: targetRect.width,
                 height: targetRect.height,
-                duration: 1,
-                ease: 'expo.out',
+                duration: 0.8,
+                ease: 'power3.inOut', // Smoother easing function
                 onComplete: () => {
                     // Remove the clone and show the actual image
                     imgClone.remove();
@@ -414,6 +436,7 @@ export default class ColumnScroll {
         imgClone.style.borderRadius = '10px';
         imgClone.style.zIndex = '1000';
         imgClone.style.transition = 'none';
+        imgClone.style.objectFit = 'contain'; // Ensure consistent object-fit during transition
         document.body.appendChild(imgClone);
 
         // Hide the original image
@@ -429,7 +452,7 @@ export default class ColumnScroll {
                     width: itemRect.width,
                     height: itemRect.height,
                     duration: 0.8,
-                    ease: 'expo.inOut',
+                    ease: 'power3.inOut', // Use the same easing as opening animation
                     onComplete: () => {
                         // Remove the clone
                         imgClone.remove();

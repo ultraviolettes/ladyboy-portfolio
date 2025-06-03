@@ -20,7 +20,8 @@ class Project extends Model implements HasMedia
             ->width(300)
             ->height(300)
             ->optimize()
-            ->quality(80);
+            ->quality(80)
+            ->nonQueued();
 
         $this->addMediaConversion('column')
             ->width(800)
