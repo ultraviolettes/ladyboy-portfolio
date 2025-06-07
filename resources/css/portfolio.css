@@ -45,7 +45,6 @@ main::after {
 	display: flex;
 	justify-content: center;
     gap: 4vw;
-    min-height: 150vh; /* Ensure enough scrolling space */
     overflow: visible; /* Ensure content is visible when scrolling */
 }
 
@@ -57,6 +56,25 @@ main::after {
 	padding: 5vh 0 15vh;
 	overflow: visible; /* Ensure content is visible when scrolling */
 	width: calc(33.333% - 2.667vw); /* Equal width for all column-wrap elements (100% / 3 - gap adjustment) */
+}
+
+/* Responsive styles for mobile */
+@media (max-width: 768px) {
+    .columns {
+        flex-direction: column;
+        padding: 0 1.5rem;
+        gap: 2vh;
+    }
+
+    .column-wrap {
+        width: 100%;
+        padding: 2vh 0;
+    }
+
+    /* Disable the inverse scrolling effect on mobile */
+    .column {
+        transform: none !important;
+    }
 }
 .column-wrap--height {
 	height: 100vh;
@@ -104,7 +122,7 @@ main::after {
 	margin-top: 0.5rem;
 }
 .column__item {
-    margin-bottom: 20vh;
+    margin-bottom: 2vh;
     position: relative;
     overflow: hidden;
     border-radius: 10px;
@@ -133,7 +151,7 @@ main::after {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%);
+    /*background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%);*/
     border-radius: 10px;
     opacity: 0;
     transition: opacity 0.5s ease;
@@ -277,6 +295,38 @@ main::after {
     opacity: 0;
     transform: translateX(20px);
     transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* Responsive styles for project details on mobile */
+@media (max-width: 768px) {
+    .project-details__content {
+        width: 95%;
+        padding: 1rem;
+    }
+
+    .project-details__title {
+        font-size: 1.8rem;
+    }
+
+    .project-details__main-content {
+        flex-direction: column;
+    }
+
+    .project-details__image {
+        width: 100%;
+        max-height: 50vh;
+    }
+
+    .project-details__description {
+        width: 100%;
+        margin-top: 1.5rem;
+        font-size: 1rem;
+    }
+
+    .project-details__thumbnail {
+        width: 100px;
+        height: 100px;
+    }
 }
 
 .project-details.active .project-details__description {

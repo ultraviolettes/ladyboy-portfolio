@@ -33,6 +33,8 @@ export default class ColumnScroll {
     }
 
     init() {
+        // Calculate the appropriate height for the columns container
+        this.calculateColumnsHeight();
 
         // Initialize Lenis for smooth scrolling
         this.scroll = new Lenis({
@@ -44,13 +46,20 @@ export default class ColumnScroll {
             smoothWheel: true,
             smoothTouch: true,
             touchMultiplier: 2,
-            infinite: true
+            infinite: false // Change to false to avoid empty space
         });
 
         // Lenis scroll event: translate the first and third grid column based on scroll position
         this.scroll.on('scroll', ({ scroll, limit, velocity, direction, progress }) => {
-            this.oddColumns.forEach(column => column.style.transform = `translateY(${scroll * this.scrollSpeedOdd}px)`);
-            this.evenColumns.forEach(column => column.style.transform = `translateY(${-scroll * this.scrollSpeedEven}px)`);
+            // Only apply the inverse scrolling effect if not on mobile
+            if (window.innerWidth > 768) {
+                this.oddColumns.forEach(column => column.style.transform = `translateY(${scroll * this.scrollSpeedOdd}px)`);
+                this.evenColumns.forEach(column => column.style.transform = `translateY(${-scroll * this.scrollSpeedEven}px)`);
+            } else {
+                // On mobile, reset transforms to ensure normal scrolling
+                this.oddColumns.forEach(column => column.style.transform = 'none');
+                this.evenColumns.forEach(column => column.style.transform = 'none');
+            }
         });
 
         // Set up the animation frame for Lenis
@@ -148,26 +157,8 @@ export default class ColumnScroll {
         // Store all images for the current project
         this.currentProjectImages = projectImages;
 
-        // Get the position and dimensions of the clicked item
-        const itemRect = item.getBoundingClientRect();
-        const itemImg = item.querySelector('img');
-
-        // Create a clone of the image for the animation
-        const imgClone = itemImg.cloneNode(true);
-        imgClone.style.position = 'fixed';
-        imgClone.style.top = `${itemRect.top}px`;
-        imgClone.style.left = `${itemRect.left}px`;
-        imgClone.style.width = `${itemRect.width}px`;
-        imgClone.style.height = `${itemRect.height}px`;
-        imgClone.style.borderRadius = '10px';
-        imgClone.style.zIndex = '1000';
-        imgClone.style.transition = 'none';
-        imgClone.style.objectFit = 'cover'; // Ensure consistent object-fit during transition
-        document.body.appendChild(imgClone);
-
         // Populate project details from data attributes
         this.projectDetailsTitle.textContent = projectTitle || imgAlt;
-        this.projectDetailsImage.style.opacity = '0'; // Hide the target image initially
         this.projectDetailsImage.src = imgSrc;
         this.projectDetailsImage.alt = imgAlt;
         this.projectDetailsDescription.innerHTML = projectDescription || '';
@@ -234,8 +225,9 @@ export default class ColumnScroll {
             this.projectDetailsThumbnails.classList.remove('few-thumbnails');
         }
 
-        // Show project details container (but keep content invisible)
+        // Show project details container
         this.projectDetails.classList.add('active');
+        this.projectDetailsImage.style.opacity = '1';
 
         // Disable scrolling on body and Lenis scroll
         document.body.style.overflow = 'hidden';
@@ -246,55 +238,29 @@ export default class ColumnScroll {
         // Set grid view state
         this.isGridView = false;
 
-        // Get the target position for the image animation
-        setTimeout(() => {
-            const targetRect = this.projectDetailsImage.getBoundingClientRect();
+        // Animate the elements with a simple fade-in
+        gsap.fromTo(this.projectDetailsTitle,
+            {y: -20, opacity: 0},
+            {y: 0, opacity: 1, duration: 0.5, delay: 0.1, ease: 'power2.out'}
+        );
 
-            // Preload the target image to ensure dimensions are known
-            const preloadImg = new Image();
-            preloadImg.src = imgSrc;
+        gsap.fromTo(this.projectDetailsControls,
+            {y: -20, opacity: 0},
+            {y: 0, opacity: 1, duration: 0.5, delay: 0.2, ease: 'power2.out'}
+        );
 
-            // Animate the cloned image to the target position with a smooth transition
-            gsap.to(imgClone, {
-                top: targetRect.top,
-                left: targetRect.left,
-                width: targetRect.width,
-                height: targetRect.height,
-                duration: 0.8,
-                ease: 'power3.inOut', // Smoother easing function
-                onComplete: () => {
-                    // Remove the clone and show the actual image
-                    imgClone.remove();
-                    this.projectDetailsImage.style.opacity = '1';
-
-                    // Animate the header elements sequentially
-                    gsap.fromTo(this.projectDetailsTitle,
-                        {y: -20, opacity: 0},
-                        {y: 0, opacity: 1, duration: 0.5, delay: 0.1, ease: 'power2.out'}
-                    );
-
-                    gsap.fromTo(this.projectDetailsControls,
-                        {y: -20, opacity: 0},
-                        {y: 0, opacity: 1, duration: 0.5, delay: 0.2, ease: 'power2.out'}
-                    );
-
-                    // The main content (image and description) animations are handled by CSS transitions
-
-                    // Animate thumbnails with a staggered effect
-                    gsap.fromTo(this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail'),
-                        {y: 30, opacity: 0},
-                        {
-                            y: 0,
-                            opacity: 1,
-                            duration: 0.5,
-                            stagger: 0.05,
-                            delay: 0.4,
-                            ease: 'power2.out'
-                        }
-                    );
-                }
-            });
-        }, 100);
+        // Animate thumbnails with a staggered effect
+        gsap.fromTo(this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail'),
+            {y: 30, opacity: 0},
+            {
+                y: 0,
+                opacity: 1,
+                duration: 0.5,
+                stagger: 0.05,
+                delay: 0.4,
+                ease: 'power2.out'
+            }
+        );
     }
 
     switchProject(index) {
@@ -418,62 +384,24 @@ export default class ColumnScroll {
     closeProjectDetails() {
         if (this.currentProjectIndex === -1) return;
 
-        // Get the current project item in the grid
-        const item = this.projectItems[this.currentProjectIndex];
-        const itemRect = item.getBoundingClientRect();
-
-        // Get the current image in the details view
-        const detailsImage = this.projectDetailsImage;
-        const detailsImageRect = detailsImage.getBoundingClientRect();
-
-        // Create a clone of the image for the animation
-        const imgClone = detailsImage.cloneNode(true);
-        imgClone.style.position = 'fixed';
-        imgClone.style.top = `${detailsImageRect.top}px`;
-        imgClone.style.left = `${detailsImageRect.left}px`;
-        imgClone.style.width = `${detailsImageRect.width}px`;
-        imgClone.style.height = `${detailsImageRect.height}px`;
-        imgClone.style.borderRadius = '10px';
-        imgClone.style.zIndex = '1000';
-        imgClone.style.transition = 'none';
-        imgClone.style.objectFit = 'contain'; // Ensure consistent object-fit during transition
-        document.body.appendChild(imgClone);
-
-        // Hide the original image
-        detailsImage.style.opacity = '0';
-
         // Animate elements out sequentially
         const timeline = gsap.timeline({
             onComplete: () => {
-                // Animate the cloned image back to the grid position
-                gsap.to(imgClone, {
-                    top: itemRect.top,
-                    left: itemRect.left,
-                    width: itemRect.width,
-                    height: itemRect.height,
-                    duration: 0.8,
-                    ease: 'power3.inOut', // Use the same easing as opening animation
-                    onComplete: () => {
-                        // Remove the clone
-                        imgClone.remove();
+                // Hide project details
+                this.projectDetails.classList.remove('active');
 
-                        // Hide project details
-                        this.projectDetails.classList.remove('active');
+                // Re-enable scrolling on body
+                document.body.style.overflow = '';
 
-                        // Re-enable scrolling on body
-                        document.body.style.overflow = '';
+                // Restart Lenis scroll
+                if (this.scroll) {
+                    this.scroll.start();
+                    this.scroll.resize();
+                }
 
-                        // Restart Lenis scroll
-                        if (this.scroll) {
-                            this.scroll.start();
-                            this.scroll.resize();
-                        }
-
-                        // Reset state
-                        this.isGridView = true;
-                        this.currentProjectIndex = -1;
-                    }
-                });
+                // Reset state
+                this.isGridView = true;
+                this.currentProjectIndex = -1;
             }
         });
 
@@ -503,6 +431,12 @@ export default class ColumnScroll {
                 y: -20,
                 duration: 0.3,
                 ease: 'power2.in'
+            }, '-=0.2')
+            .to(this.projectDetailsImage, {
+                opacity: 0,
+                scale: 0.95,
+                duration: 0.3,
+                ease: 'power2.in'
             }, '-=0.2');
     }
 
@@ -515,6 +449,58 @@ export default class ColumnScroll {
             // Update Lenis scroll
             this.scroll.resize();
         }, 1000); // Wait for the animation to complete
+    }
+
+    calculateColumnsHeight() {
+        // Get the tallest column
+        let maxHeight = 0;
+
+        // For mobile view (single column), calculate total height of all items
+        if (window.innerWidth <= 768) {
+            let totalHeight = 0;
+
+            // Sum up heights of all items across all columns
+            this.projectItems.forEach(item => {
+                totalHeight += item.offsetHeight + parseInt(window.getComputedStyle(item).marginBottom);
+            });
+
+            // Add padding
+            totalHeight += 100;
+            maxHeight = totalHeight;
+        } else {
+            // For desktop view (3 columns), find the tallest column
+            this.columns.forEach(column => {
+                const items = column.querySelectorAll('.column__item');
+                let columnHeight = 0;
+
+                // Sum up the heights of all items in the column
+                items.forEach(item => {
+                    columnHeight += item.offsetHeight + parseInt(window.getComputedStyle(item).marginBottom);
+                });
+
+                // Add padding to account for spacing
+                columnHeight += 100; // Extra padding
+
+                // Update max height if this column is taller
+                maxHeight = Math.max(maxHeight, columnHeight);
+            });
+        }
+
+        // Set the container height to the calculated height plus some padding
+        // but ensure it's at least 100vh to allow for scrolling effects
+        const minHeight = Math.max(window.innerHeight, maxHeight);
+        this.container.style.height = `${minHeight}px`;
+
+        // Remove existing resize listener to avoid duplicates
+        window.removeEventListener('resize', this.resizeHandler);
+
+        // Create a resize handler and store it for later removal
+        this.resizeHandler = () => {
+            this.calculateColumnsHeight();
+        };
+
+        // Add the resize listener
+        window.addEventListener('resize', this.resizeHandler);
     }
 }
 
