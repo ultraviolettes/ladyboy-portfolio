@@ -14,7 +14,7 @@ class Project extends Model implements HasMedia
 
     protected $fillable = ['title', 'description', 'external_link'];
 
-    public function registerMediaConversions(Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')
             ->width(300)

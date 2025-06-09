@@ -50,7 +50,7 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Get the user's initials
+     * Get the user's initials.
      */
     public function initials(): string
     {
@@ -62,7 +62,6 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-
         if (app()->environment('local')) {
             return true;
         }
