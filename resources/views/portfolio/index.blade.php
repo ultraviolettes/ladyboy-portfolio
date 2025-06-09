@@ -8,6 +8,25 @@
 
 <div class="frame">
     <div>Ladyboy Studio</div>
+    <button class="button-menu" id="burger-menu">
+        <span></span>
+    </button>
+</div>
+
+<!-- Menu Panel -->
+<div class="menu-panel">
+    <div class="menu-panel__content">
+        <div class="menu-panel__header">
+            <h2>Menu</h2>
+        </div>
+        <nav class="menu-panel__nav">
+            <ul>
+                <li><a href="mailto:hello@ladyboy.studio">Contact</a></li>
+                <li><a href="https://www.instagram.com/ladyboyentertainment" target="_blank">Instagram</a></li>
+                <li><a href="https://www.behance.net/ladyboystudio" target="_blank">LinkedIn</a></li>
+            </ul>
+        </nav>
+    </div>
 </div>
 
 <main>
@@ -24,7 +43,8 @@
                             data-project-title="{{ $project->title }}"
                             data-project-description="{{ $project->description }}"
                             data-project-images="{{ $project->getMedia()->map(function($media) { return $media->getUrl(); })->toJson() }}"
-                            data-original-image="{{ $project->getFirstMediaUrl() }}">
+                            data-original-image="{{ $project->getFirstMediaUrl() }}"
+                            data-external-link="{{ $project->external_link }}">
                             <img class="column__item-img" src="{{ $project->getFirstMediaUrl('default', 'column') }}" alt="{{ $project->title }}">
                         </div>
                     @endforeach
@@ -48,6 +68,9 @@
                 <img src="" alt="">
             </div>
             <div class="project-details__description"></div>
+            <div class="project-details__external-link">
+                <a href="#" target="_blank" rel="noopener noreferrer">Visit Project</a>
+            </div>
         </div>
         <div class="project-details__thumbnails"></div>
     </div>

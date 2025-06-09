@@ -11,19 +11,23 @@ export default class ColumnScroll {
 
         this.projectItems = [...container.querySelectorAll('.column__item')];
         this.projectDetails = document.querySelector('.project-details');
-        this.projectDetailsContent = this.projectDetails.querySelector('.project-details__content');
         this.projectDetailsTitle = this.projectDetails.querySelector('.project-details__title');
         this.projectDetailsImage = this.projectDetails.querySelector('.project-details__image img');
         this.projectDetailsDescription = this.projectDetails.querySelector('.project-details__description');
         this.projectDetailsClose = this.projectDetails.querySelector('.project-details__close');
         this.projectDetailsBackButton = this.projectDetails.querySelector('.project-details__back-button');
         this.projectDetailsThumbnails = this.projectDetails.querySelector('.project-details__thumbnails');
+        this.projectDetailsExternalLink = this.projectDetails.querySelector('.project-details__external-link a');
+
+        // Menu elements
+        this.burgerMenu = document.getElementById('burger-menu');
+        this.menuPanel = document.querySelector('.menu-panel');
+        this.menuPanelClose = this.menuPanel.querySelector('.menu-panel__close');
 
         // State
         this.isGridView = true;
         this.currentProjectIndex = -1;
         // Scroll cached value
-        this.lastscroll = 0;
         this.scrollSpeedEven = 1.2;
         this.scrollSpeedOdd = 2.5;
 
@@ -35,6 +39,9 @@ export default class ColumnScroll {
     init() {
         // Calculate the appropriate height for the columns container
         this.calculateColumnsHeight();
+
+        // Initialize menu
+        this.initMenu();
 
         // Initialize Lenis for smooth scrolling
         this.scroll = new Lenis({
@@ -63,7 +70,7 @@ export default class ColumnScroll {
         });
 
         // Set up the animation frame for Lenis
-        const raf = (time) => {
+            const raf = (time) => {
             this.scroll.raf(time);
             requestAnimationFrame(raf);
         };
@@ -94,9 +101,15 @@ export default class ColumnScroll {
             this.projectDetailsBackButton.addEventListener('click', () => this.returnToGrid());
         }
 
-        // Add click event listener to background to close
+        // Add click event listener to close when clicking anywhere except on images
         this.projectDetails.addEventListener('click', (e) => {
-            if (e.target === this.projectDetails) {
+            // Check if the clicked element is an image or a thumbnail
+            const isImage = e.target.tagName === 'IMG';
+            const isThumbnail = e.target.closest('.project-details__thumbnail');
+            const isCloseButton = e.target.closest('.project-details__close');
+
+            // If not clicking on an image, thumbnail, or close button, close the details
+            if (!isImage && !isThumbnail && !isCloseButton) {
                 this.closeProjectDetails();
             }
         });
@@ -141,12 +154,12 @@ export default class ColumnScroll {
     }
 
     openProjectDetails(item) {
-        const projectId = item.dataset.projectId;
         const projectTitle = item.dataset.projectTitle;
         const projectDescription = item.dataset.projectDescription;
         const projectImages = JSON.parse(item.dataset.projectImages || '[]');
         const imgSrc = item.dataset.originalImage || item.querySelector('img').src;
         const imgAlt = item.querySelector('img').alt;
+        const externalLink = item.dataset.externalLink;
 
         // Find the index of the clicked project
         this.currentProjectIndex = this.projectItems.findIndex(p => p === item);
@@ -162,6 +175,15 @@ export default class ColumnScroll {
         this.projectDetailsImage.src = imgSrc;
         this.projectDetailsImage.alt = imgAlt;
         this.projectDetailsDescription.innerHTML = projectDescription || '';
+
+        // Handle external link
+        if (externalLink && externalLink.trim() !== '') {
+            this.projectDetailsExternalLink.href = externalLink;
+            this.projectDetailsExternalLink.parentElement.style.display = 'block';
+        } else {
+            this.projectDetailsExternalLink.href = '#';
+            this.projectDetailsExternalLink.parentElement.style.display = 'none';
+        }
 
         // Clear existing thumbnails
         this.projectDetailsThumbnails.innerHTML = '';
@@ -228,6 +250,8 @@ export default class ColumnScroll {
         // Show project details container
         this.projectDetails.classList.add('active');
         this.projectDetailsImage.style.opacity = '1';
+        this.projectDetailsDescription.style.opacity = '1';
+
 
         // Disable scrolling on body and Lenis scroll
         document.body.style.overflow = 'hidden';
@@ -280,10 +304,10 @@ export default class ColumnScroll {
         const projectDescription = item.dataset.projectDescription;
         const imgSrc = projectImages.length > 0 ? projectImages[0] : item.querySelector('img').src;
         const imgAlt = item.querySelector('img').alt;
+        const externalLink = item.dataset.externalLink;
 
         // Get the main content container
-        const mainContent = this.projectDetails.querySelector('.project-details__main-content');
-
+        this.projectDetails.querySelector('.project-details__main-content');
         // Update thumbnails to show the active project
         const thumbnails = this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail');
         thumbnails.forEach((thumb, idx) => {
@@ -320,6 +344,15 @@ export default class ColumnScroll {
                     this.projectDetailsImage.src = imgSrc;
                     this.projectDetailsImage.alt = imgAlt;
                     this.projectDetailsDescription.innerHTML = projectDescription || '';
+
+                    // Handle external link
+                    if (externalLink && externalLink.trim() !== '') {
+                        this.projectDetailsExternalLink.href = externalLink;
+                        this.projectDetailsExternalLink.parentElement.style.display = 'block';
+                    } else {
+                        this.projectDetailsExternalLink.href = '#';
+                        this.projectDetailsExternalLink.parentElement.style.display = 'none';
+                    }
                 }
             }, '-=0.2')
             // Fade in elements sequentially
@@ -469,7 +502,7 @@ export default class ColumnScroll {
             maxHeight = totalHeight;
         } else {
             // For desktop view (3 columns), find the tallest column
-            this.columns.forEach(column => {
+            this.columns.forEach((column, index) => {
                 const items = column.querySelectorAll('.column__item');
                 let columnHeight = 0;
 
@@ -480,16 +513,27 @@ export default class ColumnScroll {
 
                 // Add padding to account for spacing
                 columnHeight += 100; // Extra padding
+                console.log(columnHeight);
+
+                // Apply scroll speed multiplier based on column type (odd or even)
+                // This accounts for the different scroll speeds in the visual effect
+                if (index === 1) { // Even column (middle)
+                    columnHeight *= this.scrollSpeedEven / 2;
+                } else { // Odd columns (first and third)
+                    columnHeight *= this.scrollSpeedOdd / 2;
+                }
 
                 // Update max height if this column is taller
                 maxHeight = Math.max(maxHeight, columnHeight);
+                console.log(columnHeight, maxHeight);
             });
         }
 
-        // Set the container height to the calculated height plus some padding
-        // but ensure it's at least 100vh to allow for scrolling effects
+        // Set the container height to the calculated height plus minimal padding
+        // Ensure it's at least 100vh to allow for scrolling effects
         const minHeight = Math.max(window.innerHeight, maxHeight);
-        this.container.style.height = `${minHeight}px`;
+        const extraPadding = window.innerHeight * 0.2; // Add 20% of viewport height as extra padding
+        this.container.style.height = `${minHeight + extraPadding}px`;
 
         // Remove existing resize listener to avoid duplicates
         window.removeEventListener('resize', this.resizeHandler);
@@ -501,6 +545,69 @@ export default class ColumnScroll {
 
         // Add the resize listener
         window.addEventListener('resize', this.resizeHandler);
+    }
+
+    initMenu() {
+        // Add click event listener to burger menu button
+        if (this.burgerMenu) {
+            this.burgerMenu.addEventListener('click', () => {
+                this.toggleMenu();
+            });
+        }
+
+        // Add click event listener to close button
+        if (this.menuPanelClose) {
+            this.menuPanelClose.addEventListener('click', () => {
+                this.closeMenu();
+            });
+        }
+
+        // Add escape key listener to close menu
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.menuPanel.classList.contains('active')) {
+                this.closeMenu();
+            }
+        });
+
+        // Add click event listener to close when clicking outside the menu content
+        this.menuPanel.addEventListener('click', (e) => {
+            // If clicking on the menu panel background (not the content)
+            if (e.target === this.menuPanel) {
+                this.closeMenu();
+            }
+        });
+    }
+
+    toggleMenu() {
+        if (this.menuPanel.classList.contains('active')) {
+            this.closeMenu();
+        } else {
+            this.openMenu();
+        }
+    }
+
+    openMenu() {
+        this.menuPanel.classList.add('active');
+        this.burgerMenu.classList.add('active');
+
+        // Disable scrolling on body and Lenis scroll
+        document.body.style.overflow = 'hidden';
+        if (this.scroll) {
+            this.scroll.stop();
+        }
+    }
+
+    closeMenu() {
+        this.menuPanel.classList.remove('active');
+        this.burgerMenu.classList.remove('active');
+
+        // Re-enable scrolling if project details is not open
+        if (!this.projectDetails.classList.contains('active')) {
+            document.body.style.overflow = '';
+            if (this.scroll) {
+                this.scroll.start();
+            }
+        }
     }
 }
 
