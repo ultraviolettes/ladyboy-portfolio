@@ -23,7 +23,7 @@
             <ul>
                 <li><a href="mailto:hello@ladyboy.studio">Contact</a></li>
                 <li><a href="https://www.instagram.com/ladyboyentertainment" target="_blank">Instagram</a></li>
-                <li><a href="https://www.behance.net/ladyboystudio" target="_blank">LinkedIn</a></li>
+                <li><a href="https://www.behance.net/ladyboystudio" target="_blank">Behance</a></li>
             </ul>
         </nav>
     </div>
@@ -69,7 +69,9 @@
             </div>
             <div class="project-details__description"></div>
             <div class="project-details__external-link">
-                <a href="#" target="_blank" rel="noopener noreferrer">Visit Project</a>
+                <a href="#" target="_blank" rel="noopener noreferrer">
+                    <img src="{{ Vite::asset('resources/img/view.png') }}" alt="View project" class="w-16 h-8" />
+                </a>
             </div>
         </div>
         <div class="project-details__thumbnails"></div>

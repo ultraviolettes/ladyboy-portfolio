@@ -215,7 +215,7 @@ main::after {
 .project-details__title {
   font-size: 2.5rem;
   font-weight: 700;
-  font-family: 'Unbounded', sans-serif;
+  font-family: 'Abhaya Libre', serif;
   margin-bottom: 1rem;
 }
 
@@ -235,7 +235,7 @@ main::after {
   color: white;
   padding: 0.5rem 1rem;
   cursor: pointer;
-  font-family: 'Unbounded', sans-serif;
+  font-family: 'Abhaya Libre', serif;
   font-size: 0.875rem;
   transition:
     background-color 0.3s,
@@ -334,19 +334,10 @@ main::after {
 }
 
 .project-details__external-link a {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  background-color: rgba(255, 255, 255, 0.1);
   color: white;
   text-decoration: none;
-  border-radius: 4px;
   font-family: 'Instrument Sans', sans-serif;
-  font-size: 0.9rem;
   transition: background-color 0.3s;
-}
-
-.project-details__external-link a:hover {
-  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .project-details.active .project-details__external-link {

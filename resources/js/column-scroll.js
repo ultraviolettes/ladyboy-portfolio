@@ -172,18 +172,24 @@ export default class ColumnScroll {
     const projectTitle = item.dataset.projectTitle;
     const projectDescription = item.dataset.projectDescription;
     const projectImages = JSON.parse(item.dataset.projectImages || '[]');
-    const imgSrc = item.dataset.originalImage || item.querySelector('img').src;
     const imgAlt = item.querySelector('img').alt;
     const externalLink = item.dataset.externalLink;
 
     // Find the index of the clicked project
     this.currentProjectIndex = this.projectItems.findIndex(p => p === item);
 
-    // Store the current image index within the project
-    this.currentImageIndex = 0;
-
     // Store all images for the current project
     this.currentProjectImages = projectImages;
+
+    // Store the current image index within the project
+    // If there are multiple images, start with the second image (index 1)
+    this.currentImageIndex = projectImages.length > 1 ? 1 : 0;
+
+    // Get the image source based on the current image index
+    const imgSrc =
+      projectImages.length > 1
+        ? projectImages[1]
+        : item.dataset.originalImage || item.querySelector('img').src;
 
     // Populate project details from data attributes
     this.projectDetailsTitle.textContent = projectTitle || imgAlt;
@@ -209,7 +215,7 @@ export default class ColumnScroll {
       projectImages.forEach((imgSrc, idx) => {
         const thumbnail = document.createElement('div');
         thumbnail.className = 'project-details__thumbnail';
-        if (idx === 0) {
+        if (idx === this.currentImageIndex) {
           thumbnail.classList.add('active');
         }
 
