@@ -45,7 +45,7 @@
                             data-project-images="{{ $project->getMedia()->map(function($media) { return $media->getUrl(); })->toJson() }}"
                             data-original-image="{{ $project->getFirstMediaUrl() }}"
                             data-external-link="{{ $project->external_link }}">
-                            <img class="column__item-img" src="{{ $project->getFirstMediaUrl('default', 'column') }}" alt="{{ $project->title }}">
+                            <img class="column__item-img" loading="lazy" width="800" height="auto" src="{{ $project->getFirstMediaUrl('default', 'column') }}" alt="{{ $project->title }}">
                         </div>
                     @endforeach
                 </div>
@@ -57,21 +57,20 @@
 <!-- Project details overlay -->
 <div class="project-details">
     <div class="project-details__content">
-        <div class="project-details__header">
-            <h2 class="project-details__title"></h2>
-            <div class="project-details__controls">
-                <button class="project-details__close">&times;</button>
-            </div>
-        </div>
         <div class="project-details__main-content">
             <div class="project-details__image">
-                <img src="" alt="">
+                <img src="" alt="" loading="lazy">
             </div>
-            <div class="project-details__description"></div>
-            <div class="project-details__external-link">
-                <a href="#" target="_blank" rel="noopener noreferrer">
-                    <img src="{{ Vite::asset('resources/img/view.png') }}" alt="View project" class="w-16 h-8" />
-                </a>
+            <div class="project-details__content">
+                <div class="project-details__header">
+                    <h2 class="project-details__title"></h2>
+                </div>
+                <div class="project-details__description"></div>
+                <div class="project-details__external-link">
+                    <a href="#" target="_blank" rel="noopener noreferrer">
+                        <img src="{{ Vite::asset('resources/img/view.png') }}" alt="View project" class="w-16 h-8" />
+                    </a>
+                </div>
             </div>
         </div>
         <div class="project-details__thumbnails"></div>

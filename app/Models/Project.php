@@ -19,12 +19,14 @@ class Project extends Model implements HasMedia
         $this->addMediaConversion('thumb')
             ->width(300)
             ->height(300)
+            ->format('webp')
             ->optimize()
             ->quality(80)
             ->nonQueued();
 
         $this->addMediaConversion('column')
             ->width(800)
+            ->format('webp')
             ->optimize()
             ->quality(85)
             ->nonQueued();
