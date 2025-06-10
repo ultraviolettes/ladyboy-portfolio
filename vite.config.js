@@ -21,6 +21,10 @@ export default defineConfig({
         }),
         tailwindcss(),
         imagemin({
+            gifsicle: {
+                optimizationLevel: 7,
+                interlaced: false,
+            },
             optipng: {
                 optimizationLevel: 7,
             },
