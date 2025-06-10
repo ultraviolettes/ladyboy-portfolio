@@ -20,14 +20,7 @@ export default defineConfig({
             refresh: true,
         }),
         tailwindcss(),
-        imagetools({
-            defaultDirectives: new URLSearchParams({
-                format: 'webp;jpg;png;avif',
-                quality: '80',
-                width: 'auto',
-                height: 'auto',
-            }),
-        }),
+        imagetools(),
     ],
     server: {
         cors: true,
