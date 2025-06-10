@@ -3,7 +3,7 @@ import {
 } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import tailwindcss from "@tailwindcss/vite";
-import imagemin from 'vite-plugin-imagemin';
+import { imagetools } from 'vite-imagetools';
 
 export default defineConfig({
     plugins: [
@@ -20,35 +20,13 @@ export default defineConfig({
             refresh: true,
         }),
         tailwindcss(),
-        imagemin({
-            gifsicle: {
-                optimizationLevel: 7,
-                interlaced: false,
-            },
-            optipng: {
-                optimizationLevel: 7,
-            },
-            mozjpeg: {
-                quality: 80,
-            },
-            pngquant: {
-                quality: [0.8, 0.9],
-                speed: 4,
-            },
-            svgo: {
-                plugins: [
-                    {
-                        name: 'removeViewBox',
-                    },
-                    {
-                        name: 'removeEmptyAttrs',
-                        active: false,
-                    },
-                ],
-            },
-            webp: {
-                quality: 80,
-            },
+        imagetools({
+            defaultDirectives: new URLSearchParams({
+                format: 'webp;jpg;png;avif',
+                quality: '80',
+                width: 'auto',
+                height: 'auto',
+            }),
         }),
     ],
     server: {
