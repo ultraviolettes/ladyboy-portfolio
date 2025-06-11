@@ -105,24 +105,21 @@ export default class ColumnScroll {
       item.addEventListener('click', () => this.openProjectDetails(item));
     });
 
-    // Add click event listener to close button
-    this.projectDetailsClose.addEventListener('click', () => this.closeProjectDetails());
 
     // Add click event listener to back button
     if (this.projectDetailsBackButton) {
       this.projectDetailsBackButton.addEventListener('click', () => this.returnToGrid());
     }
 
-    // Add click event listener to close when clicking anywhere except on images
+    // Add click event listener to close when clicking anywhere except on thumbnails and view project button
     this.projectDetails.addEventListener('click', e => {
-      // Check if the clicked element is an image or a thumbnail
-      const isImage = e.target.tagName === 'IMG';
+      // Check if the clicked element is a thumbnail or the view project button
       const isThumbnail = e.target.closest('.project-details__thumbnail');
-      const isCloseButton = e.target.closest('.project-details__close');
+      const isViewProjectButton = e.target.closest('.project-details__external-link');
 
-      // If not clicking on an image, thumbnail, or close button, close the details
-      if (!isImage && !isThumbnail && !isCloseButton) {
-        this.closeProjectDetails();
+      // If not clicking on a thumbnail or view project button, close the details
+      if (!isThumbnail && !isViewProjectButton) {
+        this.returnToGrid();
       }
     });
 
@@ -289,12 +286,6 @@ export default class ColumnScroll {
       this.projectDetailsTitle,
       { y: -20, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.5, delay: 0.1, ease: 'power2.out' }
-    );
-
-    gsap.fromTo(
-      this.projectDetailsControls,
-      { y: -20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.5, delay: 0.2, ease: 'power2.out' }
     );
 
     // Animate thumbnails with a staggered effect
@@ -505,16 +496,6 @@ export default class ColumnScroll {
       )
       .to(
         this.projectDetailsTitle,
-        {
-          opacity: 0,
-          y: -20,
-          duration: 0.3,
-          ease: 'power2.in',
-        },
-        '-=0.2'
-      )
-      .to(
-        this.projectDetailsControls,
         {
           opacity: 0,
           y: -20,
