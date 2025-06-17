@@ -17,15 +17,13 @@
 <div class="menu-panel">
     <div class="menu-panel__content">
         <div class="menu-panel__header">
-            <h2>Menu</h2>
+            <img src="{{ Vite::asset('resources/img/about.png') }}" alt="" class="h-48 w-96 object-fill"/>
         </div>
-        <nav class="menu-panel__nav">
-            <ul>
-                <li><a href="mailto:hello@ladyboy.studio">Contact</a></li>
-                <li><a href="https://www.instagram.com/ladyboyentertainment" target="_blank">Instagram</a></li>
-                <li><a href="https://www.behance.net/ladyboystudio" target="_blank">Behance</a></li>
-            </ul>
-        </nav>
+        <div class="menu-panel__nav">
+            <div><a href="mailto:hello@ladyboy.studio"><img src="{{ Vite::asset('resources/img/contact.png') }}" alt="" /></a></div>
+            <div><a href="https://www.instagram.com/ladyboyentertainment" target="_blank"><img src="{{ Vite::asset('resources/img/insta.png') }}" alt="" /></a></div>
+            <div><a href="https://www.behance.net/ladyboystudio" target="_blank"><img src="{{ Vite::asset('resources/img/behance.png') }}" alt="" /></a></div>
+        </div>
     </div>
 </div>
 
@@ -68,7 +66,7 @@
                 <div class="project-details__description"></div>
                 <div class="project-details__external-link">
                     <a href="#" target="_blank" rel="noopener noreferrer">
-                        <img src="{{ Vite::asset('resources/img/view.png') }}" alt="View project" class="w-16 h-8" />
+                        <img src="{{ Vite::asset('resources/img/view.png') }}" class="project-details__thumbnail" alt="View project" />
                     </a>
                 </div>
             </div>
