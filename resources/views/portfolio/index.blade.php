@@ -54,6 +54,7 @@
 
 <!-- Project details overlay -->
 <div class="project-details">
+    <button class="project-details__close" type="button" aria-label="Fermer le projet">&times;</button>
     <div class="project-details__content">
         <div class="project-details__main-content">
             <div class="project-details__image">

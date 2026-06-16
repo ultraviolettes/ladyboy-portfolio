@@ -255,33 +255,34 @@ main::after {
 }
 
 .project-details__close {
-    font-size: 2rem;
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    z-index: 110;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.25rem;
+    line-height: 1;
     background: none;
     border: none;
     color: white;
     cursor: pointer;
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 110;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background-color: rgba(0, 0, 0, 0.5);
-    transition: background-color 0.3s;
+    transition: opacity 0.3s ease;
 }
 
 .project-details__close:hover {
-    background-color: rgba(0, 0, 0, 0.8);
+    opacity: 0.7;
 }
 
 .project-details__main-content {
     display: flex;
-    gap: 2rem;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.5rem;
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.5s ease,
@@ -301,8 +302,9 @@ main::after {
 }
 
 .project-details__image {
-    width: 60%;
-    max-height: 70vh;
+    width: auto;
+    max-width: 90%;
+    max-height: 65vh;
     border-radius: 0;
     overflow: hidden;
     display: flex;
@@ -311,9 +313,9 @@ main::after {
 }
 
 .project-details__image img {
-    width: 100%;
+    width: auto;
     max-width: 100%;
-    max-height: 70vh;
+    max-height: 65vh;
     display: block;
     object-fit: contain;
     height: auto;
@@ -324,7 +326,8 @@ main::after {
 
 .project-details__description {
     font-family: 'Helvetica Neue', serif;
-    width: 40%;
+    max-width: 600px;
+    margin: 0 auto;
     font-size: 0.95rem;
     line-height: 1.6;
     opacity: 1;

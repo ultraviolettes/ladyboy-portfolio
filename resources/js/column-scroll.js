@@ -111,6 +111,14 @@ export default class ColumnScroll {
       this.projectDetailsBackButton.addEventListener('click', () => this.returnToGrid());
     }
 
+    // Add click event listener to the close (×) button
+    if (this.projectDetailsClose) {
+      this.projectDetailsClose.addEventListener('click', e => {
+        e.stopPropagation();
+        this.closeProjectDetails();
+      });
+    }
+
     // Add click event listener to close when clicking anywhere except on thumbnails and view project button
     this.projectDetails.addEventListener('click', e => {
       // Check if the clicked element is a thumbnail or the view project button
@@ -276,6 +284,11 @@ export default class ColumnScroll {
     document.body.style.overflow = 'hidden';
     if (this.scroll) {
       this.scroll.stop();
+    }
+
+    // Hide the burger menu while the project is open (the × replaces it)
+    if (this.burgerMenu) {
+      this.burgerMenu.style.display = 'none';
     }
 
     // Set grid view state
@@ -462,6 +475,11 @@ export default class ColumnScroll {
 
         // Re-enable scrolling on body
         document.body.style.overflow = '';
+
+        // Restore the burger menu
+        if (this.burgerMenu) {
+          this.burgerMenu.style.display = '';
+        }
 
         // Restart Lenis scroll
         if (this.scroll) {
