@@ -179,13 +179,13 @@ export default class ColumnScroll {
     this.currentProjectImages = projectImages;
 
     // Store the current image index within the project
-    // If there are multiple images, start with the second image (index 1)
-    this.currentImageIndex = projectImages.length > 1 ? 1 : 0;
+    // Always start with the first image (index 0)
+    this.currentImageIndex = 0;
 
     // Get the image source based on the current image index
     const imgSrc =
-      projectImages.length > 1
-        ? projectImages[1]
+      projectImages.length > 0
+        ? projectImages[0]
         : item.dataset.originalImage || item.querySelector('img').src;
 
     // Populate project details from data attributes
