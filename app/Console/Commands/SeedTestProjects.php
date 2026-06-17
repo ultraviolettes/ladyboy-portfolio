@@ -15,7 +15,8 @@ class SeedTestProjects extends Command
 {
     protected $signature = 'projects:seed-test
         {count=20 : Nombre de projets de test à créer}
-        {--clear : Supprime les projets de test (titre "TEST ..") au lieu d en créer}';
+        {--clear : Supprime les projets de test (titre "TEST ..") au lieu d en créer}
+        {--force : Autorise la création même en environnement de production}';
 
     protected $description = 'Crée ou supprime des projets de test (avec images) pour tester le scroll';
 
@@ -27,6 +28,13 @@ class SeedTestProjects extends Command
             $this->info("Supprimé {$projects->count()} projets de test. Total restant : ".Project::count());
 
             return self::SUCCESS;
+        }
+
+        // Garde-fou : ne jamais créer de faux projets en production par accident
+        if ($this->getLaravel()->environment('production') && ! $this->option('force')) {
+            $this->error('Refus de créer des projets de test en production. Relance avec --force si tu es sûr.');
+
+            return self::FAILURE;
         }
 
         // Fichiers source = images réelles des projets existants (extensions sûres pour les conversions)
