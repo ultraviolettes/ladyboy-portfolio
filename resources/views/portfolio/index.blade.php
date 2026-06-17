@@ -17,7 +17,7 @@
 <div class="menu-panel">
     <div class="menu-panel__content">
         <div class="menu-panel__header">
-            <img src="{{ Vite::asset('resources/img/about.png') }}" alt="" class="h-48 w-96 object-fill"/>
+            <img src="{{ Vite::asset('resources/img/about.png') }}" alt="Ladyboy Studio — about"/>
         </div>
         <div class="menu-panel__nav">
             <div><a href="mailto:hello@ladyboy.studio"><img src="{{ Vite::asset('resources/img/contact.png') }}" alt="" /></a></div>
@@ -37,14 +37,18 @@
             <div class="column-wrap">
                 <div class="column">
                     @foreach ($projectChunk as $project)
+                        @php $thumb = $project->gridThumb(); @endphp
                         <div class="column__item"
                             data-project-id="{{ $project->id }}"
                             data-project-title="{{ $project->title }}"
                             data-project-description="{{ $project->description }}"
-                            data-project-images="{{ $project->getMedia()->map(function($media) { return $media->getUrl(); })->toJson() }}"
-                            data-original-image="{{ $project->getFirstMediaUrl() }}"
+                            data-project-media="{{ $project->frontMedia()->toJson() }}"
                             data-external-link="{{ $project->external_link }}">
-                            <img class="column__item-img" width="800" height="auto" src="{{ $project->getFirstMediaUrl('default', 'column') }}" alt="{{ $project->title }}">
+                            @if ($thumb && $thumb['type'] === 'video')
+                                <video class="column__item-img" muted playsinline preload="metadata" src="{{ $thumb['url'] }}#t=0.1"></video>
+                            @elseif ($thumb)
+                                <img class="column__item-img" width="800" height="auto" src="{{ $thumb['url'] }}" alt="{{ $thumb['alt'] }}">
+                            @endif
                         </div>
                     @endforeach
                 </div>
@@ -60,6 +64,7 @@
         <div class="project-details__main-content">
             <div class="project-details__image">
                 <img src="" alt="" loading="lazy">
+                <video controls playsinline preload="metadata" style="display: none"></video>
             </div>
             <div class="project-details__content">
                 <div class="project-details__header">

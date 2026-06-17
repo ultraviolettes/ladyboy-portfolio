@@ -14,7 +14,10 @@ export default class ColumnScroll {
     this.projectItems = [...container.querySelectorAll('.column__item')];
     this.projectDetails = document.querySelector('.project-details');
     this.projectDetailsTitle = this.projectDetails.querySelector('.project-details__title');
+    this.projectDetailsImageWrap = this.projectDetails.querySelector('.project-details__image');
     this.projectDetailsImage = this.projectDetails.querySelector('.project-details__image img');
+    this.projectDetailsVideo = this.projectDetails.querySelector('.project-details__image video');
+    this.currentProjectMedia = [];
     this.projectDetailsDescription = this.projectDetails.querySelector(
       '.project-details__description'
     );
@@ -153,15 +156,15 @@ export default class ColumnScroll {
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
 
-        // If we have multiple images for the current project, navigate between them
-        if (this.currentProjectImages && this.currentProjectImages.length > 1) {
+        // If we have multiple media for the current project, navigate between them
+        if (this.currentProjectMedia && this.currentProjectMedia.length > 1) {
           let newImageIndex = this.currentImageIndex;
           if (e.key === 'ArrowLeft') {
             newImageIndex =
-              (newImageIndex - 1 + this.currentProjectImages.length) %
-              this.currentProjectImages.length;
+              (newImageIndex - 1 + this.currentProjectMedia.length) %
+              this.currentProjectMedia.length;
           } else {
-            newImageIndex = (newImageIndex + 1) % this.currentProjectImages.length;
+            newImageIndex = (newImageIndex + 1) % this.currentProjectMedia.length;
           }
           this.switchProjectImage(newImageIndex);
         } else {
@@ -180,110 +183,12 @@ export default class ColumnScroll {
   }
 
   openProjectDetails(item) {
-    const projectTitle = item.dataset.projectTitle;
-    const projectDescription = item.dataset.projectDescription;
-    const projectImages = JSON.parse(item.dataset.projectImages || '[]');
-    const imgAlt = item.querySelector('img').alt;
-    const externalLink = item.dataset.externalLink;
-
-    // Find the index of the clicked project
+    // Identify the clicked project, then populate the panel from its media data
     this.currentProjectIndex = this.projectItems.findIndex(p => p === item);
-
-    // Store all images for the current project
-    this.currentProjectImages = projectImages;
-
-    // Store the current image index within the project
-    // Always start with the first image (index 0)
-    this.currentImageIndex = 0;
-
-    // Get the image source based on the current image index
-    const imgSrc =
-      projectImages.length > 0
-        ? projectImages[0]
-        : item.dataset.originalImage || item.querySelector('img').src;
-
-    // Populate project details from data attributes
-    this.projectDetailsTitle.textContent = projectTitle || imgAlt;
-    this.projectDetailsImage.src = imgSrc;
-    this.projectDetailsImage.alt = imgAlt;
-    this.projectDetailsDescription.innerHTML = projectDescription || '';
-
-    // Handle external link
-    if (externalLink && externalLink.trim() !== '') {
-      this.projectDetailsExternalLink.href = externalLink;
-      this.projectDetailsExternalLink.parentElement.style.display = 'block';
-    } else {
-      this.projectDetailsExternalLink.href = '#';
-      this.projectDetailsExternalLink.parentElement.style.display = 'none';
-    }
-
-    // Clear existing thumbnails
-    this.projectDetailsThumbnails.innerHTML = '';
-
-    // Check if current project has multiple images
-    if (projectImages.length > 1) {
-      // Create thumbnails for all images of the current project
-      projectImages.forEach((imgSrc, idx) => {
-        const thumbnail = document.createElement('div');
-        thumbnail.className = 'project-details__thumbnail';
-        if (idx === this.currentImageIndex) {
-          thumbnail.classList.add('active');
-        }
-
-        const thumbnailImg = document.createElement('img');
-        thumbnailImg.src = imgSrc;
-        thumbnailImg.alt = `${projectTitle || imgAlt} - Image ${idx + 1}`;
-
-        thumbnail.appendChild(thumbnailImg);
-
-        // Add click event to thumbnail to switch images
-        thumbnail.addEventListener('click', () => {
-          this.switchProjectImage(idx);
-        });
-
-        this.projectDetailsThumbnails.appendChild(thumbnail);
-      });
-    } else {
-      // If current project doesn't have multiple images, create thumbnails for all project items
-      this.projectItems.forEach((projectItem, idx) => {
-        const isCurrentProject = idx === this.currentProjectIndex;
-        const thumbImgSrc = projectItem.querySelector('img').src;
-        const thumbImgAlt = projectItem.querySelector('img').alt;
-
-        const thumbnail = document.createElement('div');
-        thumbnail.className = 'project-details__thumbnail';
-        if (isCurrentProject) {
-          thumbnail.classList.add('active');
-        }
-
-        const thumbnailImg = document.createElement('img');
-        thumbnailImg.src = thumbImgSrc;
-        thumbnailImg.alt = thumbImgAlt;
-
-        thumbnail.appendChild(thumbnailImg);
-
-        // Add click event to thumbnail to switch projects
-        thumbnail.addEventListener('click', () => {
-          this.switchProject(idx);
-        });
-
-        this.projectDetailsThumbnails.appendChild(thumbnail);
-      });
-    }
-
-    // Add 'few-thumbnails' class if there are 10 or fewer thumbnails
-    if (
-      (projectImages.length > 1 && projectImages.length <= 10) ||
-      (projectImages.length <= 1 && this.projectItems.length <= 10)
-    ) {
-      this.projectDetailsThumbnails.classList.add('few-thumbnails');
-    } else {
-      this.projectDetailsThumbnails.classList.remove('few-thumbnails');
-    }
+    this.loadProject(item);
 
     // Show project details container
     this.projectDetails.classList.add('active');
-    this.projectDetailsImage.style.opacity = '1';
     this.projectDetailsDescription.style.opacity = '1';
 
     // Disable scrolling on body and Lenis scroll
@@ -322,57 +227,118 @@ export default class ColumnScroll {
     );
   }
 
-  switchProject(index) {
-    // Update current index
-    this.currentProjectIndex = index;
+  // Populate the panel from a grid item (used on open and when switching project)
+  loadProject(item) {
+    this.currentProjectMedia = JSON.parse(item.dataset.projectMedia || '[]');
     this.currentImageIndex = 0;
 
-    // Get the project item
+    const title = item.dataset.projectTitle || '';
+    this.projectDetailsTitle.textContent = title;
+    this.projectDetailsDescription.innerHTML = item.dataset.projectDescription || '';
+    this.setExternalLink(item.dataset.externalLink);
+
+    this.showMedia(this.currentProjectMedia[0], title);
+    this.buildThumbnails(title);
+  }
+
+  setExternalLink(externalLink) {
+    if (externalLink && externalLink.trim() !== '') {
+      this.projectDetailsExternalLink.href = externalLink;
+      this.projectDetailsExternalLink.parentElement.style.display = 'block';
+    } else {
+      this.projectDetailsExternalLink.href = '#';
+      this.projectDetailsExternalLink.parentElement.style.display = 'none';
+    }
+  }
+
+  // Show an image or a video in the main display area
+  showMedia(media, alt) {
+    const img = this.projectDetailsImage;
+    const video = this.projectDetailsVideo;
+
+    if (media && media.type === 'video') {
+      img.style.display = 'none';
+      img.removeAttribute('src');
+      if (video) {
+        video.src = media.full || media.url;
+        video.style.display = '';
+      }
+    } else {
+      if (video) {
+        video.pause();
+        video.removeAttribute('src');
+        video.style.display = 'none';
+      }
+      img.src = media ? media.full || media.url : '';
+      img.alt = alt || '';
+      img.style.display = '';
+    }
+  }
+
+  buildThumbnails(title) {
+    this.projectDetailsThumbnails.innerHTML = '';
+    const media = this.currentProjectMedia;
+
+    if (media.length > 1) {
+      // One thumbnail per media of the current project
+      media.forEach((m, idx) => {
+        const thumb = this.createThumbnail(m, idx === this.currentImageIndex, `${title} - ${idx + 1}`);
+        thumb.addEventListener('click', () => this.switchProjectImage(idx));
+        this.projectDetailsThumbnails.appendChild(thumb);
+      });
+    } else {
+      // Single media -> thumbnails point to every project
+      this.projectItems.forEach((projectItem, idx) => {
+        const itemMedia = JSON.parse(projectItem.dataset.projectMedia || '[]');
+        const thumb = this.createThumbnail(
+          itemMedia[0],
+          idx === this.currentProjectIndex,
+          projectItem.dataset.projectTitle || ''
+        );
+        thumb.addEventListener('click', () => this.switchProject(idx));
+        this.projectDetailsThumbnails.appendChild(thumb);
+      });
+    }
+
+    const count = media.length > 1 ? media.length : this.projectItems.length;
+    this.projectDetailsThumbnails.classList.toggle('few-thumbnails', count <= 10);
+  }
+
+  createThumbnail(media, isActive, alt) {
+    const thumbnail = document.createElement('div');
+    thumbnail.className = 'project-details__thumbnail';
+    if (isActive) {
+      thumbnail.classList.add('active');
+    }
+
+    if (media && media.type === 'video') {
+      thumbnail.classList.add('project-details__thumbnail--video');
+      const video = document.createElement('video');
+      video.src = `${media.full || media.url}#t=0.1`;
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = 'metadata';
+      thumbnail.appendChild(video);
+    } else {
+      const img = document.createElement('img');
+      img.src = media ? media.url || media.full : '';
+      img.alt = alt || '';
+      thumbnail.appendChild(img);
+    }
+
+    return thumbnail;
+  }
+
+  switchProject(index) {
+    this.currentProjectIndex = index;
     const item = this.projectItems[index];
 
-    // Parse project images
-    const projectImages = JSON.parse(item.dataset.projectImages || '[]');
-    this.currentProjectImages = projectImages;
-
-    // Update project details
-    const projectTitle = item.dataset.projectTitle;
-    const projectDescription = item.dataset.projectDescription;
-    const imgSrc = projectImages.length > 0 ? projectImages[0] : item.querySelector('img').src;
-    const imgAlt = item.querySelector('img').alt;
-    const externalLink = item.dataset.externalLink;
-
-    // Get the main content container
-    this.projectDetails.querySelector('.project-details__main-content');
-    // Update thumbnails to show the active project
-    const thumbnails = this.projectDetailsThumbnails.querySelectorAll(
-      '.project-details__thumbnail'
-    );
-    thumbnails.forEach((thumb, idx) => {
-      if (idx === index) {
-        thumb.classList.add('active');
-      } else {
-        thumb.classList.remove('active');
-      }
-    });
-
-    // Animate content change
     gsap
       .timeline()
-      // Fade out elements sequentially
-      .to(this.projectDetailsDescription, {
-        opacity: 0,
-        x: 20,
-        duration: 0.3,
-        ease: 'power2.in',
-      })
+      .to(this.projectDetailsDescription, { opacity: 0, x: 20, duration: 0.3, ease: 'power2.in' })
       .to(
-        this.projectDetailsImage,
-        {
-          opacity: 0,
-          scale: 0.95,
-          duration: 0.3,
-          ease: 'power2.in',
-        },
+        this.projectDetailsImageWrap,
+        { opacity: 0, scale: 0.95, duration: 0.3, ease: 'power2.in' },
         '-=0.2'
       )
       .to(
@@ -382,90 +348,34 @@ export default class ColumnScroll {
           y: -10,
           duration: 0.3,
           ease: 'power2.in',
-          onComplete: () => {
-            // Update content
-            this.projectDetailsTitle.textContent = projectTitle || imgAlt;
-            this.projectDetailsImage.src = imgSrc;
-            this.projectDetailsImage.alt = imgAlt;
-            this.projectDetailsDescription.innerHTML = projectDescription || '';
-
-            // Handle external link
-            if (externalLink && externalLink.trim() !== '') {
-              this.projectDetailsExternalLink.href = externalLink;
-              this.projectDetailsExternalLink.parentElement.style.display = 'block';
-            } else {
-              this.projectDetailsExternalLink.href = '#';
-              this.projectDetailsExternalLink.parentElement.style.display = 'none';
-            }
-          },
+          onComplete: () => this.loadProject(item),
         },
         '-=0.2'
       )
-      // Fade in elements sequentially
-      .to(this.projectDetailsTitle, {
-        opacity: 1,
-        y: 0,
-        duration: 0.4,
-        ease: 'power2.out',
-      })
+      .to(this.projectDetailsTitle, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' })
       .to(
-        this.projectDetailsImage,
-        {
-          opacity: 1,
-          scale: 1,
-          duration: 0.4,
-          ease: 'power2.out',
-        },
+        this.projectDetailsImageWrap,
+        { opacity: 1, scale: 1, duration: 0.4, ease: 'power2.out' },
         '-=0.2'
       )
-      .to(
-        this.projectDetailsDescription,
-        {
-          opacity: 1,
-          x: 0,
-          duration: 0.4,
-          ease: 'power2.out',
-        },
-        '-=0.2'
-      );
+      .to(this.projectDetailsDescription, { opacity: 1, x: 0, duration: 0.4, ease: 'power2.out' }, '-=0.2');
   }
 
   switchProjectImage(index) {
-    // Update current image index
     this.currentImageIndex = index;
+    const media = this.currentProjectMedia[index];
 
-    // Get the image URL
-    const imageUrl = this.currentProjectImages[index];
+    const thumbnails = this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail');
+    thumbnails.forEach((thumb, i) => thumb.classList.toggle('active', i === index));
 
-    // Update thumbnails
-    const thumbnails = this.projectDetailsThumbnails.querySelectorAll(
-      '.project-details__thumbnail'
-    );
-    thumbnails.forEach((thumb, i) => {
-      if (i === index) {
-        thumb.classList.add('active');
-      } else {
-        thumb.classList.remove('active');
-      }
-    });
-
-    // Animate image change
-    gsap.to(this.projectDetailsImage, {
+    gsap.to(this.projectDetailsImageWrap, {
       opacity: 0,
       scale: 0.95,
       duration: 0.3,
       ease: 'power2.in',
       onComplete: () => {
-        // Update image
-        this.projectDetailsImage.src = imageUrl;
-
-        // Fade in image
-        gsap.to(this.projectDetailsImage, {
-          opacity: 1,
-          scale: 1,
-          duration: 0.4,
-          ease: 'power2.out',
-        });
+        this.showMedia(media, this.projectDetailsTitle.textContent);
+        gsap.to(this.projectDetailsImageWrap, { opacity: 1, scale: 1, duration: 0.4, ease: 'power2.out' });
       },
     });
   }
@@ -478,6 +388,11 @@ export default class ColumnScroll {
       onComplete: () => {
         // Hide project details
         this.projectDetails.classList.remove('active');
+
+        // Stop any playing video
+        if (this.projectDetailsVideo) {
+          this.projectDetailsVideo.pause();
+        }
 
         // Re-enable scrolling on body
         document.body.style.overflow = '';
@@ -529,7 +444,7 @@ export default class ColumnScroll {
         '-=0.2'
       )
       .to(
-        this.projectDetailsImage,
+        this.projectDetailsImageWrap,
         {
           opacity: 0,
           scale: 0.95,

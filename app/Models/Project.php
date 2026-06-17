@@ -16,6 +16,11 @@ class Project extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
+        // Les conversions image (thumb/column) ne s'appliquent pas aux vidéos
+        if ($media !== null && ! str_starts_with((string) $media->mime_type, 'image/')) {
+            return;
+        }
+
         $this->addMediaConversion('thumb')
             ->width(300)
             ->height(300)
@@ -30,5 +35,46 @@ class Project extends Model implements HasMedia
             ->optimize()
             ->quality(85)
             ->nonQueued();
+    }
+
+    /**
+     * Médias formatés pour le front : type (image/vidéo) + URLs.
+     */
+    public function frontMedia(): \Illuminate\Support\Collection
+    {
+        return $this->getMedia()->map(function (Media $media) {
+            $isImage = str_starts_with((string) $media->mime_type, 'image/');
+
+            return [
+                'type' => $isImage ? 'image' : 'video',
+                // image -> conversion 'column' (légère) ; vidéo -> fichier original
+                'url' => $isImage && $media->hasGeneratedConversion('column')
+                    ? $media->getUrl('column')
+                    : $media->getUrl(),
+                'full' => $media->getUrl(),
+            ];
+        })->values();
+    }
+
+    /**
+     * Vignette de la grille : 1re image du projet, sinon 1re vidéo (frame).
+     */
+    public function gridThumb(): ?array
+    {
+        $image = $this->getMedia()->first(
+            fn (Media $m) => str_starts_with((string) $m->mime_type, 'image/')
+        );
+
+        if ($image) {
+            return [
+                'type' => 'image',
+                'url' => $image->hasGeneratedConversion('column') ? $image->getUrl('column') : $image->getUrl(),
+                'alt' => $this->title,
+            ];
+        }
+
+        $first = $this->getMedia()->first();
+
+        return $first ? ['type' => 'video', 'url' => $first->getUrl(), 'alt' => $this->title] : null;
     }
 }

@@ -23,8 +23,10 @@ class ProjectResource extends Resource
             Forms\Components\Textarea::make('description'),
             Forms\Components\TextInput::make('external_link'),
             Forms\Components\SpatieMediaLibraryFileUpload::make('images')
+                ->label('Images et vidéos')
                 ->multiple()
-                ->image()
+                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4'])
+                ->maxSize(102400) // 100 Mo (pensez à upload_max_filesize / post_max_size côté PHP)
                 ->directory('projects')
                 ->preserveFilenames()
                 ->reorderable(),
