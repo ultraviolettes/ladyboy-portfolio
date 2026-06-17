@@ -5,9 +5,11 @@ export default class ColumnScroll {
   constructor(container) {
     this.container = container;
     this.columns = [...container.querySelectorAll('.column')];
-    // first and third columns
-    this.oddColumns = this.columns.filter((_, index) => index !== 1);
-    this.evenColumns = this.columns.filter((_, index) => index === 1);
+    // Index of the middle column (it gets the reverse-direction parallax)
+    this.middleIndex = 1;
+    // Per-column geometry, filled by computeColumnGeometry()
+    this.columnData = [];
+    this.scrollLimit = 1;
 
     this.projectItems = [...container.querySelectorAll('.column__item')];
     this.projectDetails = document.querySelector('.project-details');
@@ -35,9 +37,6 @@ export default class ColumnScroll {
     // State
     this.isGridView = true;
     this.currentProjectIndex = -1;
-    // Scroll cached value
-    this.scrollSpeedEven = 1.2;
-    this.scrollSpeedOdd = 2.5;
 
     // Initialize
     this.init();
@@ -45,8 +44,8 @@ export default class ColumnScroll {
   }
 
   init() {
-    // Calculate the appropriate height for the columns container
-    this.calculateColumnsHeight();
+    // Compute per-column geometry and the container scroll height
+    this.computeColumnGeometry();
 
     // Initialize menu
     this.initMenu();
@@ -61,24 +60,16 @@ export default class ColumnScroll {
       smoothWheel: true,
       smoothTouch: true,
       touchMultiplier: 2,
-      infinite: false, // Change to false to avoid empty space
+      infinite: false,
     });
 
-    // Lenis scroll event: translate the first and third grid column based on scroll position
-    this.scroll.on('scroll', ({ scroll, limit, velocity, direction, progress }) => {
-      // Only apply the inverse scrolling effect if not on mobile
-      if (window.innerWidth > 768) {
-        this.oddColumns.forEach(
-          column => (column.style.transform = `translateY(${scroll * this.scrollSpeedOdd}px)`)
-        );
-        this.evenColumns.forEach(
-          column => (column.style.transform = `translateY(${-scroll * this.scrollSpeedEven}px)`)
-        );
-      } else {
-        // On mobile, reset transforms to ensure normal scrolling
-        this.oddColumns.forEach(column => (column.style.transform = 'none'));
-        this.evenColumns.forEach(column => (column.style.transform = 'none'));
-      }
+    // Bounded parallax: each column reveals exactly its own content over the
+    // full scroll. Side columns reveal top -> bottom, the middle column reverses
+    // (bottom -> top). No column ever drifts past its content, so there are no
+    // black gaps and the last images stay reachable at the end of the scroll.
+    this.scroll.on('scroll', ({ scroll, limit }) => {
+      this.scrollLimit = limit || this.scrollLimit;
+      this.applyParallax(scroll, this.scrollLimit);
     });
 
     // Set up the animation frame for Lenis
@@ -88,15 +79,30 @@ export default class ColumnScroll {
     };
     requestAnimationFrame(raf);
 
-    // Update scroll on window resize
-    window.addEventListener('resize', () => {
-      this.scroll.resize();
+    // Apply the initial state right away (avoids a flash before the first scroll)
+    this.applyParallax(0, this.scroll.limit || this.scrollLimit);
+
+    // Image heights are only known once they load -> recompute then
+    this.projectItems.forEach(item => {
+      const img = item.querySelector('img');
+      if (img && !img.complete) {
+        img.addEventListener('load', () => this.refreshLayout());
+      }
     });
 
-    // Refresh scroll after a short delay to ensure all elements are properly sized
-    setTimeout(() => {
+    // Recompute on resize and once everything has settled
+    window.addEventListener('resize', () => this.refreshLayout());
+    window.addEventListener('load', () => this.refreshLayout());
+    setTimeout(() => this.refreshLayout(), 500);
+  }
+
+  // Recompute geometry then re-apply the parallax for the current scroll position
+  refreshLayout() {
+    this.computeColumnGeometry();
+    if (this.scroll) {
       this.scroll.resize();
-    }, 500);
+      this.applyParallax(this.scroll.scroll || 0, this.scroll.limit || this.scrollLimit);
+    }
   }
 
   initProjectDetails() {
@@ -545,67 +551,67 @@ export default class ColumnScroll {
     }, 1000); // Wait for the animation to complete
   }
 
-  calculateColumnsHeight() {
-    // Get the tallest column
-    let maxHeight = 0;
+  // Measure each column's real content height and size the scroll container.
+  computeColumnGeometry() {
+    const vh = window.innerHeight;
+    const isMobile = window.innerWidth <= 768;
 
-    // For mobile view (single column), calculate total height of all items
-    if (window.innerWidth <= 768) {
-      let totalHeight = 0;
-
-      // Sum up heights of all items across all columns
-      this.projectItems.forEach(item => {
-        totalHeight += item.offsetHeight + parseInt(window.getComputedStyle(item).marginBottom);
+    this.columnData = this.columns.map((column, index) => {
+      let contentHeight = 0;
+      column.querySelectorAll('.column__item').forEach(item => {
+        const marginBottom = parseInt(window.getComputedStyle(item).marginBottom, 10) || 0;
+        contentHeight += item.offsetHeight + marginBottom;
       });
 
-      // Add padding
-      totalHeight += 100;
-      maxHeight = totalHeight;
+      // How much this column can scroll within its own content
+      const range = Math.max(0, contentHeight - vh);
+
+      return {
+        el: column,
+        contentHeight,
+        range,
+        isMiddle: index === this.middleIndex,
+        // Columns shorter than the viewport are kept static and centered
+        centerOffset: range === 0 ? Math.max(0, (vh - contentHeight) / 2) : 0,
+      };
+    });
+
+    // Scroll distance = the tallest column's scrollable range
+    const maxRange = this.columnData.reduce((max, c) => Math.max(max, c.range), 0);
+
+    if (isMobile) {
+      // Natural vertical stacking on mobile, no parallax
+      this.container.style.height = '';
+      this.columns.forEach(column => (column.style.transform = 'none'));
     } else {
-      // For desktop view (3 columns), find the tallest column
-      this.columns.forEach((column, index) => {
-        const items = column.querySelectorAll('.column__item');
-        let columnHeight = 0;
+      this.container.style.height = `${vh + maxRange}px`;
+    }
+  }
 
-        // Sum up the heights of all items in the column
-        items.forEach(item => {
-          columnHeight += item.offsetHeight + parseInt(window.getComputedStyle(item).marginBottom);
-        });
-
-        // Add padding to account for spacing
-        columnHeight += 100; // Extra padding
-
-        // Apply scroll speed multiplier based on column type (odd or even)
-        // This accounts for the different scroll speeds in the visual effect
-        if (index === 1) {
-          // Even column (middle)
-          columnHeight *= this.scrollSpeedEven / 2;
-        } else {
-          // Odd columns (first and third)
-          columnHeight *= this.scrollSpeedOdd / 2;
-        }
-
-        // Update max height if this column is taller
-        maxHeight = Math.max(maxHeight, columnHeight);
-      });
+  // Translate each column so it reveals exactly its content, bounded (no black).
+  applyParallax(scroll, limit) {
+    if (window.innerWidth <= 768) {
+      this.columns.forEach(column => (column.style.transform = 'none'));
+      return;
     }
 
-    // Set the container height to the calculated height plus minimal padding
-    // Ensure it's at least 100vh to allow for scrolling effects
-    const minHeight = Math.max(window.innerHeight, maxHeight);
-    const extraPadding = window.innerHeight * 0.2; // Add 20% of viewport height as extra padding
-    this.container.style.height = `${minHeight + extraPadding}px`;
+    const distance = limit && limit > 0 ? limit : 1;
+    const progress = Math.min(1, Math.max(0, scroll / distance));
 
-    // Remove existing resize listener to avoid duplicates
-    window.removeEventListener('resize', this.resizeHandler);
-
-    // Create a resize handler and store it for later removal
-    this.resizeHandler = () => {
-      this.calculateColumnsHeight();
-    };
-
-    // Add the resize listener
-    window.addEventListener('resize', this.resizeHandler);
+    this.columnData.forEach(column => {
+      let translateY;
+      if (column.range === 0) {
+        // Short column: stay put, vertically centered
+        translateY = scroll + column.centerOffset;
+      } else if (column.isMiddle) {
+        // Middle column reveals bottom -> top (reverse direction)
+        translateY = scroll - (1 - progress) * column.range;
+      } else {
+        // Side columns reveal top -> bottom
+        translateY = scroll - progress * column.range;
+      }
+      column.el.style.transform = `translate3d(0, ${translateY}px, 0)`;
+    });
   }
 
   initMenu() {

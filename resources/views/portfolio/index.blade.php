@@ -29,11 +29,12 @@
 
 <main>
     <div class="columns" data-scroll-container>
-        @foreach ($projects->chunk(ceil($projects->count() / 3)) as $projectChunk) <!-- Divise les projets en 3 colonnes -->
-            <div @class([
-                'column-wrap' => true,
-                'column-wrap--height' => $loop->odd
-            ])>
+        @php
+            // Répartition round-robin pour équilibrer les 3 colonnes (ex. 7 projets -> 3/2/2)
+            $columns = $projects->values()->groupBy(fn ($project, $i) => $i % 3);
+        @endphp
+        @foreach ($columns as $projectChunk)
+            <div class="column-wrap">
                 <div class="column">
                     @foreach ($projectChunk as $project)
                         <div class="column__item"
@@ -43,7 +44,7 @@
                             data-project-images="{{ $project->getMedia()->map(function($media) { return $media->getUrl(); })->toJson() }}"
                             data-original-image="{{ $project->getFirstMediaUrl() }}"
                             data-external-link="{{ $project->external_link }}">
-                            <img class="column__item-img" loading="lazy" width="800" height="auto" src="{{ $project->getFirstMediaUrl('default', 'column') }}" alt="{{ $project->title }}">
+                            <img class="column__item-img" width="800" height="auto" src="{{ $project->getFirstMediaUrl('default', 'column') }}" alt="{{ $project->title }}">
                         </div>
                     @endforeach
                 </div>

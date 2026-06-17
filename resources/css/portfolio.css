@@ -48,6 +48,7 @@ main::after {
     padding: 0 3rem;
     display: flex;
     justify-content: center;
+    align-items: flex-start; /* Columns start at the top; heights stay content-based */
     gap: 4vw;
     overflow: visible; /* Ensure content is visible when scrolling */
 }
@@ -57,7 +58,7 @@ main::after {
     z-index: 1;
     display: flex;
     flex-direction: column;
-    padding: 5vh 0 15vh;
+    padding: 0;
     overflow: visible; /* Ensure content is visible when scrolling */
     width: calc(
         33.333% - 2.667vw
@@ -83,11 +84,6 @@ main::after {
     }
 }
 
-.column-wrap--height {
-    height: 100vh;
-    flex-direction: column-reverse;
-}
-
 .column {
     flex: 1;
     width: 100%; /* Take full width of parent column-wrap */
@@ -96,11 +92,6 @@ main::after {
     transform: translate3d(0, 0, 0);
     will-change: transform;
     overflow: visible; /* Ensure content is visible when scrolling */
-}
-
-.column-wrap--height .column {
-    flex-direction: column-reverse;
-    display: flex;
 }
 
 .column__item {
