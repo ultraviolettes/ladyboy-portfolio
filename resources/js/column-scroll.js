@@ -1,4 +1,3 @@
-import { gsap } from 'gsap';
 import Lenis from 'lenis';
 
 export default class ColumnScroll {
@@ -202,29 +201,8 @@ export default class ColumnScroll {
       this.burgerMenu.style.display = 'none';
     }
 
-    // Set grid view state
+    // Set grid view state (fade-in is handled by CSS via the .active class)
     this.isGridView = false;
-
-    // Animate the elements with a simple fade-in
-    gsap.fromTo(
-      this.projectDetailsTitle,
-      { y: -20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.5, delay: 0.1, ease: 'power2.out' }
-    );
-
-    // Animate thumbnails with a staggered effect
-    gsap.fromTo(
-      this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail'),
-      { y: 30, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.5,
-        stagger: 0.05,
-        delay: 0.4,
-        ease: 'power2.out',
-      }
-    );
   }
 
   // Populate the panel from a grid item (used on open and when switching project)
@@ -332,33 +310,7 @@ export default class ColumnScroll {
   switchProject(index) {
     this.currentProjectIndex = index;
     const item = this.projectItems[index];
-
-    gsap
-      .timeline()
-      .to(this.projectDetailsDescription, { opacity: 0, x: 20, duration: 0.3, ease: 'power2.in' })
-      .to(
-        this.projectDetailsImageWrap,
-        { opacity: 0, scale: 0.95, duration: 0.3, ease: 'power2.in' },
-        '-=0.2'
-      )
-      .to(
-        this.projectDetailsTitle,
-        {
-          opacity: 0,
-          y: -10,
-          duration: 0.3,
-          ease: 'power2.in',
-          onComplete: () => this.loadProject(item),
-        },
-        '-=0.2'
-      )
-      .to(this.projectDetailsTitle, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' })
-      .to(
-        this.projectDetailsImageWrap,
-        { opacity: 1, scale: 1, duration: 0.4, ease: 'power2.out' },
-        '-=0.2'
-      )
-      .to(this.projectDetailsDescription, { opacity: 1, x: 0, duration: 0.4, ease: 'power2.out' }, '-=0.2');
+    this.crossfadeMedia(() => this.loadProject(item));
   }
 
   switchProjectImage(index) {
@@ -368,91 +320,51 @@ export default class ColumnScroll {
     const thumbnails = this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail');
     thumbnails.forEach((thumb, i) => thumb.classList.toggle('active', i === index));
 
-    gsap.to(this.projectDetailsImageWrap, {
-      opacity: 0,
-      scale: 0.95,
-      duration: 0.3,
-      ease: 'power2.in',
-      onComplete: () => {
-        this.showMedia(media, this.projectDetailsTitle.textContent);
-        gsap.to(this.projectDetailsImageWrap, { opacity: 1, scale: 1, duration: 0.4, ease: 'power2.out' });
-      },
-    });
+    this.crossfadeMedia(() => this.showMedia(media, this.projectDetailsTitle.textContent));
+  }
+
+  // Quick CSS crossfade of the main media area, then run the update callback
+  crossfadeMedia(update) {
+    const wrap = this.projectDetailsImageWrap;
+    if (!wrap) {
+      update();
+      return;
+    }
+    wrap.classList.add('is-switching');
+    window.setTimeout(() => {
+      update();
+      wrap.classList.remove('is-switching');
+    }, 220);
   }
 
   closeProjectDetails() {
     if (this.currentProjectIndex === -1) return;
 
-    // Animate elements out sequentially
-    const timeline = gsap.timeline({
-      onComplete: () => {
-        // Hide project details
-        this.projectDetails.classList.remove('active');
+    // The fade-out is handled by CSS when the .active class is removed
+    this.projectDetails.classList.remove('active');
 
-        // Stop any playing video
-        if (this.projectDetailsVideo) {
-          this.projectDetailsVideo.pause();
-        }
+    // Stop any playing video
+    if (this.projectDetailsVideo) {
+      this.projectDetailsVideo.pause();
+    }
 
-        // Re-enable scrolling on body
-        document.body.style.overflow = '';
+    // Re-enable scrolling on body
+    document.body.style.overflow = '';
 
-        // Restore the burger menu
-        if (this.burgerMenu) {
-          this.burgerMenu.style.display = '';
-        }
+    // Restore the burger menu
+    if (this.burgerMenu) {
+      this.burgerMenu.style.display = '';
+    }
 
-        // Restart Lenis scroll
-        if (this.scroll) {
-          this.scroll.start();
-          this.scroll.resize();
-        }
+    // Restart Lenis scroll
+    if (this.scroll) {
+      this.scroll.start();
+      this.scroll.resize();
+    }
 
-        // Reset state
-        this.isGridView = true;
-        this.currentProjectIndex = -1;
-      },
-    });
-
-    // Fade out elements sequentially
-    timeline
-      .to(this.projectDetailsDescription, {
-        opacity: 0,
-        x: 20,
-        duration: 0.3,
-        ease: 'power2.in',
-      })
-      .to(
-        this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail'),
-        {
-          opacity: 0,
-          y: 30,
-          duration: 0.3,
-          stagger: 0.03,
-          ease: 'power2.in',
-        },
-        '-=0.2'
-      )
-      .to(
-        this.projectDetailsTitle,
-        {
-          opacity: 0,
-          y: -20,
-          duration: 0.3,
-          ease: 'power2.in',
-        },
-        '-=0.2'
-      )
-      .to(
-        this.projectDetailsImageWrap,
-        {
-          opacity: 0,
-          scale: 0.95,
-          duration: 0.3,
-          ease: 'power2.in',
-        },
-        '-=0.2'
-      );
+    // Reset state
+    this.isGridView = true;
+    this.currentProjectIndex = -1;
   }
 
   returnToGrid() {

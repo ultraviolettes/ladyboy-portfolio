@@ -35,6 +35,15 @@ class Project extends Model implements HasMedia
             ->optimize()
             ->quality(85)
             ->nonQueued();
+
+        // Version optimisée pour l'affichage en grand dans la fiche projet
+        // (évite de charger l'original, souvent > 1 Mo)
+        $this->addMediaConversion('detail')
+            ->width(1400)
+            ->format('webp')
+            ->optimize()
+            ->quality(82)
+            ->nonQueued();
     }
 
     /**
@@ -51,7 +60,9 @@ class Project extends Model implements HasMedia
                 'url' => $isImage && $media->hasGeneratedConversion('column')
                     ? $media->getUrl('column')
                     : $media->getUrl(),
-                'full' => $media->getUrl(),
+                'full' => $isImage && $media->hasGeneratedConversion('detail')
+                    ? $media->getUrl('detail')
+                    : $media->getUrl(),
             ];
         })->values();
     }
@@ -70,6 +81,8 @@ class Project extends Model implements HasMedia
                 'type' => 'image',
                 'url' => $image->hasGeneratedConversion('column') ? $image->getUrl('column') : $image->getUrl(),
                 'alt' => $this->title,
+                'width' => $image->getCustomProperty('width'),
+                'height' => $image->getCustomProperty('height'),
             ];
         }
 

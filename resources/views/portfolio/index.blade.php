@@ -46,8 +46,12 @@
                             data-external-link="{{ $project->external_link }}">
                             @if ($thumb && $thumb['type'] === 'video')
                                 <video class="column__item-img" muted playsinline preload="metadata" src="{{ $thumb['url'] }}#t=0.1"></video>
+                            @elseif ($thumb && ($thumb['width'] ?? null) && ($thumb['height'] ?? null))
+                                {{-- dimensions connues -> espace réservé + lazy-load --}}
+                                <img class="column__item-img" loading="lazy" decoding="async" width="{{ $thumb['width'] }}" height="{{ $thumb['height'] }}" src="{{ $thumb['url'] }}" alt="{{ $thumb['alt'] }}">
                             @elseif ($thumb)
-                                <img class="column__item-img" width="800" height="auto" src="{{ $thumb['url'] }}" alt="{{ $thumb['alt'] }}">
+                                {{-- pas de dimensions -> chargement direct (mesure du scroll fiable) --}}
+                                <img class="column__item-img" decoding="async" src="{{ $thumb['url'] }}" alt="{{ $thumb['alt'] }}">
                             @endif
                         </div>
                     @endforeach
