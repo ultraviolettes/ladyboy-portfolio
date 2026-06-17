@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Support\MediaDimensions;
 use Illuminate\Console\Command;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -24,24 +25,11 @@ class StoreMediaDimensions extends Command
         $skipped = 0;
 
         foreach ($media as $m) {
-            if (! $this->option('force') && $m->getCustomProperty('width') && $m->getCustomProperty('height')) {
+            if (MediaDimensions::store($m, (bool) $this->option('force'))) {
+                $done++;
+            } else {
                 $skipped++;
-
-                continue;
             }
-
-            $path = $m->getPath();
-
-            if (! is_file($path) || ($size = @getimagesize($path)) === false) {
-                $skipped++;
-
-                continue;
-            }
-
-            $m->setCustomProperty('width', $size[0]);
-            $m->setCustomProperty('height', $size[1]);
-            $m->save();
-            $done++;
         }
 
         $this->info("Dimensions stockées : {$done} média(s) traité(s), {$skipped} ignoré(s).");
