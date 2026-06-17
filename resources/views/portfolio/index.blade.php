@@ -47,10 +47,9 @@
                             @if ($thumb && $thumb['type'] === 'video')
                                 <video class="column__item-img" muted playsinline preload="metadata" src="{{ $thumb['url'] }}#t=0.1"></video>
                             @elseif ($thumb && ($thumb['width'] ?? null) && ($thumb['height'] ?? null))
-                                {{-- dimensions connues -> espace réservé + lazy-load --}}
-                                <img class="column__item-img" loading="lazy" decoding="async" width="{{ $thumb['width'] }}" height="{{ $thumb['height'] }}" src="{{ $thumb['url'] }}" alt="{{ $thumb['alt'] }}">
+                                {{-- dimensions connues -> espace réservé (pas de layout shift, mesure du scroll fiable) --}}
+                                <img class="column__item-img" decoding="async" width="{{ $thumb['width'] }}" height="{{ $thumb['height'] }}" src="{{ $thumb['url'] }}" alt="{{ $thumb['alt'] }}">
                             @elseif ($thumb)
-                                {{-- pas de dimensions -> chargement direct (mesure du scroll fiable) --}}
                                 <img class="column__item-img" decoding="async" src="{{ $thumb['url'] }}" alt="{{ $thumb['alt'] }}">
                             @endif
                         </div>
