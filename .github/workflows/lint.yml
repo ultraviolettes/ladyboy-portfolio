@@ -28,10 +28,13 @@ jobs:
       - name: Add Flux Credentials Loaded From ENV
         run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Install Dependencies
         run: |
           composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-          npm install
+          pnpm install
 
       - name: Run Pint
         run: vendor/bin/pint
