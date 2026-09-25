@@ -19,6 +19,10 @@ Route::get('/', function () {
 Route::get('/portfolio', [PortfolioController::class, 'index'])
     ->name('portfolio');
 
+// URL propre par projet : partageable, et traçable dans les stats
+Route::get('/portfolio/{project:slug}', [PortfolioController::class, 'show'])
+    ->name('portfolio.project');
+
 // Route::middleware(['auth'])->group(function () {
 //    Route::redirect('settings', 'settings/profile');
 //

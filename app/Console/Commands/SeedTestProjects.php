@@ -25,7 +25,7 @@ class SeedTestProjects extends Command
         if ($this->option('clear')) {
             $projects = Project::where('title', 'like', 'TEST %')->get();
             $projects->each->delete(); // Spatie supprime aussi les médias associés
-            $this->info("Supprimé {$projects->count()} projets de test. Total restant : ".Project::count());
+            $this->info("Supprimé {$projects->count()} projets de test. Total restant : " . Project::count());
 
             return self::SUCCESS;
         }
@@ -67,7 +67,7 @@ class SeedTestProjects extends Command
         }
 
         $this->newLine();
-        $this->info("Créé {$count} projets de test. Total projets : ".Project::count());
+        $this->info("Créé {$count} projets de test. Total projets : " . Project::count());
         $this->comment('Pour nettoyer : php artisan projects:seed-test --clear');
 
         return self::SUCCESS;

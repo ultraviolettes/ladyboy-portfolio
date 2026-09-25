@@ -13,23 +13,20 @@ export default class ColumnScroll {
     this.projectItems = [...container.querySelectorAll('.column__item')];
     this.projectDetails = document.querySelector('.project-details');
     this.projectDetailsTitle = this.projectDetails.querySelector('.project-details__title');
-    this.projectDetailsImageWrap = this.projectDetails.querySelector('.project-details__image');
-    this.projectDetailsImage = this.projectDetails.querySelector('.project-details__image img');
-    this.projectDetailsVideo = this.projectDetails.querySelector('.project-details__image video');
+    this.projectDetailsViewport = this.projectDetails.querySelector('.project-details__viewport');
+    this.projectDetailsTrack = this.projectDetails.querySelector('.project-details__track');
     this.currentProjectMedia = [];
     this.projectDetailsDescription = this.projectDetails.querySelector(
       '.project-details__description'
     );
     this.projectDetailsClose = this.projectDetails.querySelector('.project-details__close');
-    this.projectDetailsBackButton = this.projectDetails.querySelector(
-      '.project-details__back-button'
-    );
-    this.projectDetailsThumbnails = this.projectDetails.querySelector(
-      '.project-details__thumbnails'
-    );
     this.projectDetailsExternalLink = this.projectDetails.querySelector(
       '.project-details__external-link a'
     );
+    // Scroll horizontal de la piste de médias (instancié à chaque ouverture)
+    this.detailScroll = null;
+    this.detailRaf = null;
+    this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // Menu elements
     this.burgerMenu = document.getElementById('burger-menu');
@@ -43,6 +40,8 @@ export default class ColumnScroll {
     // Initialize
     this.init();
     this.initProjectDetails();
+    this.initSearch();
+    this.initRouting();
   }
 
   init() {
@@ -108,18 +107,10 @@ export default class ColumnScroll {
   }
 
   initProjectDetails() {
-    // Add click event listeners to project items
     this.projectItems.forEach(item => {
       item.addEventListener('click', () => this.openProjectDetails(item));
     });
 
-
-    // Add click event listener to back button
-    if (this.projectDetailsBackButton) {
-      this.projectDetailsBackButton.addEventListener('click', () => this.returnToGrid());
-    }
-
-    // Add click event listener to the close (×) button
     if (this.projectDetailsClose) {
       this.projectDetailsClose.addEventListener('click', e => {
         e.stopPropagation();
@@ -127,68 +118,39 @@ export default class ColumnScroll {
       });
     }
 
-    // Add click event listener to close when clicking anywhere except on thumbnails and view project button
+    // Un clic hors média (et hors lien externe) referme le projet
     this.projectDetails.addEventListener('click', e => {
-      // Check if the clicked element is a thumbnail or the view project button
-      const isThumbnail = e.target.closest('.project-details__thumbnail');
-      const isViewProjectButton = e.target.closest('.project-details__external-link');
-
-      // If not clicking on a thumbnail or view project button, close the details
-      if (!isThumbnail && !isViewProjectButton) {
-        this.returnToGrid();
-      }
+      if (e.target.closest('.project-details__slide')) return;
+      if (e.target.closest('.project-details__external-link')) return;
+      this.closeProjectDetails();
     });
 
-    // Add escape key listener to close
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && this.projectDetails.classList.contains('active')) {
+      if (!this.projectDetails.classList.contains('active')) return;
+
+      if (e.key === 'Escape') {
         this.closeProjectDetails();
-      }
-    });
-
-    // Add arrow key navigation for thumbnails
-    document.addEventListener('keydown', e => {
-      if (!this.projectDetails.classList.contains('active') || this.isGridView) {
         return;
       }
 
+      // Les flèches font défiler la piste d'un média
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
-
-        // If we have multiple media for the current project, navigate between them
-        if (this.currentProjectMedia && this.currentProjectMedia.length > 1) {
-          let newImageIndex = this.currentImageIndex;
-          if (e.key === 'ArrowLeft') {
-            newImageIndex =
-              (newImageIndex - 1 + this.currentProjectMedia.length) %
-              this.currentProjectMedia.length;
-          } else {
-            newImageIndex = (newImageIndex + 1) % this.currentProjectMedia.length;
-          }
-          this.switchProjectImage(newImageIndex);
-        } else {
-          // Otherwise, navigate between projects
-          let newProjectIndex = this.currentProjectIndex;
-          if (e.key === 'ArrowLeft') {
-            newProjectIndex =
-              (newProjectIndex - 1 + this.projectItems.length) % this.projectItems.length;
-          } else {
-            newProjectIndex = (newProjectIndex + 1) % this.projectItems.length;
-          }
-          this.switchProject(newProjectIndex);
-        }
+        this.stepTrack(e.key === 'ArrowRight' ? 1 : -1);
       }
     });
   }
 
-  openProjectDetails(item) {
+  openProjectDetails(item, { push = true } = {}) {
     // Identify the clicked project, then populate the panel from its media data
     this.currentProjectIndex = this.projectItems.findIndex(p => p === item);
-    this.loadProject(item);
+    this.loadProject(item, { push });
 
     // Show project details container
     this.projectDetails.classList.add('active');
-    this.projectDetailsDescription.style.opacity = '1';
+
+    // Le scroll horizontal est monté à l'ouverture, une fois la piste remplie
+    this.initTrackScroll();
 
     // Disable scrolling on body and Lenis scroll
     document.body.style.overflow = 'hidden';
@@ -201,22 +163,37 @@ export default class ColumnScroll {
       this.burgerMenu.style.display = 'none';
     }
 
+    // Idem pour la recherche : elle vise la grille, pas la fiche projet.
+    // Le filtre en cours est conservé, on ne fait que masquer les contrôles.
+    if (this.searchToggle) {
+      this.searchToggle.style.display = 'none';
+      this.searchToggle.setAttribute('aria-expanded', 'false');
+    }
+    if (this.searchPanel) {
+      this.searchPanel.classList.remove('active');
+    }
+
     // Set grid view state (fade-in is handled by CSS via the .active class)
     this.isGridView = false;
   }
 
   // Populate the panel from a grid item (used on open and when switching project)
-  loadProject(item) {
+  loadProject(item, { push = true } = {}) {
+    if (push) {
+      this.pushProjectUrl(item);
+    }
+
     this.currentProjectMedia = JSON.parse(item.dataset.projectMedia || '[]');
-    this.currentImageIndex = 0;
 
     const title = item.dataset.projectTitle || '';
     this.projectDetailsTitle.textContent = title;
-    this.projectDetailsDescription.innerHTML = item.dataset.projectDescription || '';
-    this.setExternalLink(item.dataset.externalLink);
 
-    this.showMedia(this.currentProjectMedia[0], title);
-    this.buildThumbnails(title);
+    const description = item.dataset.projectDescription || '';
+    this.projectDetailsDescription.innerHTML = description;
+    this.projectDetailsDescription.hidden = description.trim() === '';
+
+    this.setExternalLink(item.dataset.externalLink);
+    this.buildTrack(title);
   }
 
   setExternalLink(externalLink) {
@@ -229,124 +206,259 @@ export default class ColumnScroll {
     }
   }
 
-  // Show an image or a video in the main display area
-  showMedia(media, alt) {
-    const img = this.projectDetailsImage;
-    const video = this.projectDetailsVideo;
+  // --- Piste de médias ------------------------------------------------------
+  // Tous les médias du projet sont affichés en grand, alignés sur la hauteur,
+  // et se parcourent à l'horizontale. Plus de vignette ni d'image principale.
+  buildTrack(title) {
+    const track = this.projectDetailsTrack;
+    track.innerHTML = '';
+    track.style.removeProperty('--slide-skew');
+    this.projectDetails.classList.remove('is-revealed');
 
-    if (media && media.type === 'video') {
-      img.style.display = 'none';
-      img.removeAttribute('src');
-      if (video) {
+    this.currentProjectMedia.forEach((media, index) => {
+      const slide = document.createElement('figure');
+      slide.className = 'project-details__slide';
+      // Sert au décalage en cascade de l'animation d'entrée
+      slide.style.setProperty('--i', index);
+
+      if (media && media.type === 'video') {
+        const video = document.createElement('video');
         video.src = media.full || media.url;
-        video.style.display = '';
+        video.muted = true;
+        video.loop = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.preload = 'metadata';
+        slide.appendChild(video);
+      } else if (media) {
+        const img = document.createElement('img');
+        img.src = media.full || media.url;
+        img.alt = `${title} — ${index + 1}`;
+        img.decoding = 'async';
+        slide.appendChild(img);
       }
+
+      track.appendChild(slide);
+    });
+
+    // Repart du début, puis déclenche l'arrivée des médias
+    this.projectDetailsViewport.scrollLeft = 0;
+
+    requestAnimationFrame(() => {
+      this.projectDetails.classList.add('is-revealed');
+      track.querySelectorAll('video').forEach(video => {
+        const played = video.play();
+        if (played && typeof played.catch === 'function') played.catch(() => {});
+      });
+    });
+  }
+
+  // Lenis en mode horizontal : la molette verticale pilote la piste, et
+  // l'inertie donne le glissement des médias les uns après les autres.
+  initTrackScroll() {
+    this.destroyTrackScroll();
+
+    this.detailScroll = new Lenis({
+      wrapper: this.projectDetailsViewport,
+      content: this.projectDetailsTrack,
+      orientation: 'horizontal',
+      gestureOrientation: 'both',
+      lerp: this.prefersReducedMotion ? 1 : 0.085,
+      wheelMultiplier: 1.35,
+      touchMultiplier: 2,
+      smoothWheel: !this.prefersReducedMotion,
+      infinite: false,
+    });
+
+    // Le cisaillement suit la vitesse : les médias «traînent» quand ça défile
+    this.detailScroll.on('scroll', ({ velocity }) => {
+      if (this.prefersReducedMotion) return;
+      const skew = Math.max(-5.5, Math.min(5.5, velocity * 0.14));
+      this.projectDetailsTrack.style.setProperty('--slide-skew', `${skew.toFixed(2)}deg`);
+    });
+
+    const raf = time => {
+      if (!this.detailScroll) return;
+      this.detailScroll.raf(time);
+      this.detailRaf = requestAnimationFrame(raf);
+    };
+    this.detailRaf = requestAnimationFrame(raf);
+  }
+
+  destroyTrackScroll() {
+    if (this.detailRaf) {
+      cancelAnimationFrame(this.detailRaf);
+      this.detailRaf = null;
+    }
+    if (this.detailScroll) {
+      this.detailScroll.destroy();
+      this.detailScroll = null;
+    }
+  }
+
+  // Avance ou recule d'un média (flèches du clavier)
+  stepTrack(direction) {
+    const slide = this.projectDetailsTrack.querySelector('.project-details__slide');
+    if (!slide) return;
+
+    const gap = parseFloat(window.getComputedStyle(this.projectDetailsTrack).columnGap) || 32;
+    const step = slide.getBoundingClientRect().width + gap;
+
+    if (this.detailScroll) {
+      this.detailScroll.scrollTo(this.detailScroll.scroll + direction * step, { duration: 0.9 });
     } else {
-      if (video) {
-        video.pause();
-        video.removeAttribute('src');
-        video.style.display = 'none';
+      this.projectDetailsViewport.scrollBy({ left: direction * step, behavior: 'smooth' });
+    }
+  }
+
+  // --- Recherche ------------------------------------------------------------
+  // Filtre client sur titre + description : le catalogue est petit et déjà
+  // entièrement dans le DOM, donc pas de requête serveur.
+  initSearch() {
+    this.searchToggle = document.getElementById('search-toggle');
+    this.searchPanel = document.querySelector('.search-panel');
+    if (!this.searchToggle || !this.searchPanel) return;
+
+    this.searchInput = this.searchPanel.querySelector('.search-panel__input');
+    this.searchEmpty = this.searchPanel.querySelector('.search-panel__empty');
+
+    const normalize = value =>
+      (value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+    // Index construit une fois : accents et casse neutralisés
+    this.searchIndex = this.projectItems.map(item => ({
+      item,
+      haystack: normalize(
+        `${item.dataset.projectTitle || ''} ${item.dataset.projectDescription || ''}`
+      ),
+    }));
+
+    this.normalizeSearch = normalize;
+
+    this.searchToggle.addEventListener('click', () => this.toggleSearch());
+    this.searchInput.addEventListener('input', () => this.applySearch(this.searchInput.value));
+    this.searchInput.addEventListener('keydown', event => {
+      if (event.key === 'Escape') this.closeSearch();
+    });
+  }
+
+  toggleSearch() {
+    this.searchPanel.classList.contains('active') ? this.closeSearch() : this.openSearch();
+  }
+
+  openSearch() {
+    this.searchPanel.classList.add('active');
+    this.searchToggle.classList.add('active');
+    this.searchToggle.setAttribute('aria-expanded', 'true');
+    this.searchInput.focus();
+  }
+
+  closeSearch() {
+    this.searchPanel.classList.remove('active');
+    this.searchToggle.classList.remove('active');
+    this.searchToggle.setAttribute('aria-expanded', 'false');
+    this.searchInput.value = '';
+    this.applySearch('');
+  }
+
+  applySearch(value) {
+    const query = this.normalizeSearch(value).trim();
+    let visible = 0;
+
+    this.searchIndex.forEach(({ item, haystack }) => {
+      const match = query === '' || haystack.includes(query);
+      item.classList.toggle('is-hidden', !match);
+      if (match) visible += 1;
+    });
+
+    if (this.searchEmpty) {
+      this.searchEmpty.hidden = visible > 0;
+    }
+
+    // Les colonnes ont changé de hauteur -> on recale le parallaxe et on
+    // remonte en haut, sinon on reste bloqué hors de la nouvelle plage.
+    this.refreshLayout();
+    if (this.scroll) {
+      this.scroll.scrollTo(0, { immediate: true });
+    }
+  }
+
+  // --- Routing : une URL par projet -----------------------------------------
+  // L'overlay reste rendu côté client ; seule l'URL est synchronisée, pour que
+  // chaque projet soit partageable et compté séparément dans les stats.
+  initRouting() {
+    this.gridUrl = this.container.dataset.gridUrl || '/portfolio';
+
+    window.addEventListener('popstate', event => {
+      this.syncToSlug((event.state && event.state.project) || null);
+    });
+
+    // Arrivée directe sur /portfolio/<slug> : on ouvre le projet correspondant
+    const initialSlug = this.container.dataset.activeProject;
+    if (initialSlug) {
+      const item = this.findItemBySlug(initialSlug);
+      if (item) {
+        window.history.replaceState({ project: initialSlug }, '', window.location.href);
+        this.openProjectDetails(item, { push: false });
       }
-      img.src = media ? media.full || media.url : '';
-      img.alt = alt || '';
-      img.style.display = '';
     }
   }
 
-  buildThumbnails(title) {
-    this.projectDetailsThumbnails.innerHTML = '';
-    const media = this.currentProjectMedia;
-
-    if (media.length > 1) {
-      // One thumbnail per media of the current project
-      media.forEach((m, idx) => {
-        const thumb = this.createThumbnail(m, idx === this.currentImageIndex, `${title} - ${idx + 1}`);
-        thumb.addEventListener('click', () => this.switchProjectImage(idx));
-        this.projectDetailsThumbnails.appendChild(thumb);
-      });
-    } else {
-      // Single media -> thumbnails point to every project
-      this.projectItems.forEach((projectItem, idx) => {
-        const itemMedia = JSON.parse(projectItem.dataset.projectMedia || '[]');
-        const thumb = this.createThumbnail(
-          itemMedia[0],
-          idx === this.currentProjectIndex,
-          projectItem.dataset.projectTitle || ''
-        );
-        thumb.addEventListener('click', () => this.switchProject(idx));
-        this.projectDetailsThumbnails.appendChild(thumb);
-      });
-    }
-
-    const count = media.length > 1 ? media.length : this.projectItems.length;
-    this.projectDetailsThumbnails.classList.toggle('few-thumbnails', count <= 10);
+  findItemBySlug(slug) {
+    return this.projectItems.find(item => item.dataset.projectSlug === slug);
   }
 
-  createThumbnail(media, isActive, alt) {
-    const thumbnail = document.createElement('div');
-    thumbnail.className = 'project-details__thumbnail';
-    if (isActive) {
-      thumbnail.classList.add('active');
-    }
+  pushProjectUrl(item) {
+    const url = item.dataset.projectUrl;
+    const slug = item.dataset.projectSlug;
+    if (!url || !slug) return;
+    if (window.location.pathname === new URL(url, window.location.origin).pathname) return;
 
-    if (media && media.type === 'video') {
-      thumbnail.classList.add('project-details__thumbnail--video');
-      const video = document.createElement('video');
-      video.src = `${media.full || media.url}#t=0.1`;
-      video.muted = true;
-      video.playsInline = true;
-      video.preload = 'metadata';
-      thumbnail.appendChild(video);
-    } else {
-      const img = document.createElement('img');
-      img.src = media ? media.url || media.full : '';
-      img.alt = alt || '';
-      thumbnail.appendChild(img);
-    }
-
-    return thumbnail;
+    window.history.pushState({ project: slug }, '', url);
   }
 
-  switchProject(index) {
-    this.currentProjectIndex = index;
-    const item = this.projectItems[index];
-    this.crossfadeMedia(() => this.loadProject(item));
-  }
-
-  switchProjectImage(index) {
-    this.currentImageIndex = index;
-    const media = this.currentProjectMedia[index];
-
-    const thumbnails = this.projectDetailsThumbnails.querySelectorAll('.project-details__thumbnail');
-    thumbnails.forEach((thumb, i) => thumb.classList.toggle('active', i === index));
-
-    this.crossfadeMedia(() => this.showMedia(media, this.projectDetailsTitle.textContent));
-  }
-
-  // Quick CSS crossfade of the main media area, then run the update callback
-  crossfadeMedia(update) {
-    const wrap = this.projectDetailsImageWrap;
-    if (!wrap) {
-      update();
+  // Applique l'état porté par l'URL (retour/avance navigateur)
+  syncToSlug(slug) {
+    if (!slug) {
+      this.closeProjectDetails({ push: false });
       return;
     }
-    wrap.classList.add('is-switching');
-    window.setTimeout(() => {
-      update();
-      wrap.classList.remove('is-switching');
-    }, 220);
+
+    const item = this.findItemBySlug(slug);
+    if (!item) return;
+
+    if (this.currentProjectIndex === -1) {
+      this.openProjectDetails(item, { push: false });
+    } else {
+      this.currentProjectIndex = this.projectItems.indexOf(item);
+      this.loadProject(item, { push: false });
+    }
   }
 
-  closeProjectDetails() {
+  closeProjectDetails({ push = true } = {}) {
     if (this.currentProjectIndex === -1) return;
+
+    if (push) {
+      window.history.pushState({ project: null }, '', this.gridUrl);
+    }
 
     // The fade-out is handled by CSS when the .active class is removed
     this.projectDetails.classList.remove('active');
+    this.projectDetails.classList.remove('is-revealed');
 
-    // Stop any playing video
-    if (this.projectDetailsVideo) {
-      this.projectDetailsVideo.pause();
-    }
+    this.destroyTrackScroll();
+
+    // Coupe les vidéos de la piste et vide le DOM après le fondu
+    this.projectDetailsTrack.querySelectorAll('video').forEach(video => video.pause());
+    window.setTimeout(() => {
+      if (!this.projectDetails.classList.contains('active')) {
+        this.projectDetailsTrack.innerHTML = '';
+      }
+    }, 500);
 
     // Re-enable scrolling on body
     document.body.style.overflow = '';
@@ -354,6 +466,10 @@ export default class ColumnScroll {
     // Restore the burger menu
     if (this.burgerMenu) {
       this.burgerMenu.style.display = '';
+    }
+
+    if (this.searchToggle) {
+      this.searchToggle.style.display = '';
     }
 
     // Restart Lenis scroll
@@ -386,6 +502,7 @@ export default class ColumnScroll {
     this.columnData = this.columns.map((column, index) => {
       let contentHeight = 0;
       column.querySelectorAll('.column__item').forEach(item => {
+        if (item.classList.contains('is-hidden')) return;
         const marginBottom = parseInt(window.getComputedStyle(item).marginBottom, 10) || 0;
         contentHeight += item.offsetHeight + marginBottom;
       });

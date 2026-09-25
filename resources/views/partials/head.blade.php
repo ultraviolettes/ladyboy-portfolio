@@ -1,7 +1,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>{{ $title ?? 'Ladyboy Studio - Welcome' }}</title>
+<title>@yield('title', $title ?? 'Ladyboy Studio - Welcome')</title>
+
+@yield('meta')
 
 <link rel="icon" href="{{ Vite::asset('resources/img/favicon.png') }}" sizes="any">
 
